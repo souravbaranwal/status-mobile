@@ -18,20 +18,27 @@
 
 (rf/defn open-activity-center
   {:events [:activity-center/open]}
-  [{:keys [db]} {:keys [filter-type filter-status]}]
-  {:db       (cond-> db
-               filter-status
-               (assoc-in [:activity-center :filter :status] filter-status)
+  [{:keys [db] :as cofx} {:keys [filter-type filter-status]}]
+  {:db             (cond-> db
+                     filter-status
+                     (assoc-in [:activity-center :filter :status] filter-status)
 
-               filter-type
-               (assoc-in [:activity-center :filter :type] filter-type))
-   :dispatch [:show-popover
-              {:view                       :activity-center
-               :style                      {:margin 0}
-               :disable-touchable-overlay? true
-               :blur-view?                 true
-               :blur-view-props            {:blur-amount 20
-                                            :blur-type   :dark}}]})
+                     filter-type
+                     (assoc-in [:activity-center :filter :type] filter-type))
+   :dispatch       [:navigate-to :activity-center]
+   :dispatch-later [{:dispatch [:activity-center.notifications/fetch-first-page]
+                     :ms       50}]})
+
+(rf/defn close-activity-center
+  {:events [:activity-center/close]}
+  [{:keys [db] :as cofx}]
+  (let [filter-type   (get-in db [:activity-center :filter :type])
+        filter-status (get-in db [:activity-center :filter :status])]
+    {:db       (-> db
+                   (assoc-in [:activity-center :loading?] true)
+                   (update-in [:activity-center :notifications filter-type] dissoc :unread)
+                   (update-in [:activity-center :notifications filter-type] dissoc :all))
+     :dispatch [:navigate-back]}))
 
 ;;;; Misc
 
@@ -280,22 +287,19 @@
 
 (rf/defn notifications-fetch
   [{:keys [db]} {:keys [cursor per-page filter-type filter-status reset-data?]}]
-  (when-not (get-in db [:activity-center :notifications filter-type filter-status :loading?])
-    (let [per-page  (or per-page (defaults :notifications-per-page))
-          accepted? true]
-      {:db            (assoc-in db
-                       [:activity-center :notifications filter-type filter-status :loading?]
-                       true)
-       :json-rpc/call [{:method     "wakuext_activityCenterNotificationsBy"
-                        :params     [cursor
-                                     per-page
-                                     (filter-type->rpc-param filter-type)
-                                     (status filter-status)
-                                     accepted?]
-                        :on-success #(rf/dispatch [:activity-center.notifications/fetch-success
-                                                   filter-type filter-status reset-data? %])
-                        :on-error   #(rf/dispatch [:activity-center.notifications/fetch-error
-                                                   filter-type filter-status %])}]})))
+  (let [per-page  (or per-page (defaults :notifications-per-page))
+        accepted? true]
+    {:json-rpc/call [{:method     "wakuext_activityCenterNotificationsBy"
+                      :params     [cursor
+                                   per-page
+                                   (filter-type->rpc-param filter-type)
+                                   (status filter-status)
+                                   accepted?]
+                      :on-success #(rf/dispatch
+                                    [:activity-center.notifications/fetch-success
+                                     filter-type filter-status reset-data? %])
+                      :on-error   #(rf/dispatch [:activity-center.notifications/fetch-error
+                                                 filter-type filter-status %])}]}))
 
 (rf/defn notifications-fetch-first-page
   {:events [:activity-center.notifications/fetch-first-page]}
@@ -310,6 +314,7 @@
                                   (defaults :filter-status)))]
     (rf/merge cofx
               {:db (-> db
+                       (assoc-in [:activity-center :loading?] true)
                        (assoc-in [:activity-center :filter :type] filter-type)
                        (assoc-in [:activity-center :filter :status] filter-status))}
               (notifications-fetch {:cursor        start-or-end-cursor
@@ -338,8 +343,8 @@
    {:keys [cursor notifications]}]
   (let [processed (map data-store.activities/<-rpc notifications)]
     {:db (-> db
+             (update :activity-center dissoc :loading?)
              (assoc-in [:activity-center :notifications filter-type filter-status :cursor] cursor)
-             (update-in [:activity-center :notifications filter-type filter-status] dissoc :loading?)
              (update-in [:activity-center :notifications filter-type filter-status :data]
                         (if reset-data?
                           (constantly processed)
@@ -394,4 +399,4 @@
   {:events [:activity-center.notifications/fetch-error]}
   [{:keys [db]} filter-type filter-status error]
   (log/warn "Failed to load Activity Center notifications" error)
-  {:db (update-in db [:activity-center :notifications filter-type filter-status] dissoc :loading?)})
+  {:db (update db :activity-center dissoc :loading?)})

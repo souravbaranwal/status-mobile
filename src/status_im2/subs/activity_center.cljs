@@ -15,6 +15,12 @@
    (:unread-counts-by-type activity-center)))
 
 (re-frame/reg-sub
+ :activity-center/loading?
+ :<- [:activity-center]
+ (fn [activity-center]
+   (:loading? activity-center)))
+
+(re-frame/reg-sub
  :activity-center/notification-types-with-unread
  :<- [:activity-center/unread-counts-by-type]
  (fn [unread-counts]

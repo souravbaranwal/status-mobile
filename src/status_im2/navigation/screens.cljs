@@ -14,6 +14,7 @@
             [quo.design-system.colors :as colors]
             [status-im2.contexts.chat.photo-selector.album-selector.view :as album-selector]
             [react-native.platform :as platform]
+            [react-native.core :as rn]
             [status-im2.contexts.chat.photo-selector.view :as photo-selector]))
 
 (def components
@@ -23,9 +24,20 @@
   []
   (concat
    (old-screens/screens)
-   [{:name      :activity-center
-     :options   {:topBar {:visible false}}
-     :component activity-center/view}
+   [(let [window-width (:width (rn/get-window))]
+      {:name      :activity-center
+       :component activity-center/view
+       :options   {:topBar     {:visible false}
+                   :animations {:push {:content {:alpha        {:from 0 :to 1 :duration 150}
+                                                 :translationX {:from          window-width
+                                                                :to            0
+                                                                :interpolation {:type :decelerate}
+                                                                :duration      300}}}
+                                :pop  {:content {:alpha        {:from 1 :to 0 :duration 300}
+                                                 :translationX {:from          0
+                                                                :to            window-width
+                                                                :interpolation {:type :decelerate}
+                                                                :duration      300}}}}}})
 
     {:name      :shell-stack
      :insets    {:top false}

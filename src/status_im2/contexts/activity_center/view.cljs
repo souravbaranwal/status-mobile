@@ -3,6 +3,7 @@
             [quo.react :as react]
             [quo2.core :as quo]
             [react-native.core :as rn]
+            [react-native.reanimated :as reanimated]
             [react-native.safe-area :as safe-area]
             [status-im2.contexts.activity-center.notification-types :as types]
             [status-im2.contexts.activity-center.notification.admin.view :as admin]
@@ -29,24 +30,26 @@
 
 (defn empty-tab
   []
-  (let [filter-status (rf/sub [:activity-center/filter-status])]
-    [rn/view
-     {:style               style/empty-container
-      :accessibility-label :empty-notifications}
-     [rn/view {:style style/empty-rectangle-placeholder}]
-     [quo/text
-      {:size   :paragraph-1
-       :style  style/empty-title
-       :weight :semi-bold}
-      (i18n/label (if (= :unread filter-status)
-                    :t/empty-notifications-title-unread
-                    :t/empty-notifications-title-read))]
-     [quo/text
-      {:size  :paragraph-2
-       :style style/empty-subtitle}
-      (i18n/label (if (= :unread filter-status)
-                    :t/empty-notifications-subtitle-unread
-                    :t/empty-notifications-subtitle-read))]]))
+  (let [filter-status (rf/sub [:activity-center/filter-status])
+        loading?      (rf/sub [:activity-center/loading?])]
+    (when-not loading?
+      [rn/view
+       {:style               style/empty-container
+        :accessibility-label :empty-notifications}
+       [rn/view {:style style/empty-rectangle-placeholder}]
+       [quo/text
+        {:size   :paragraph-1
+         :style  style/empty-title
+         :weight :semi-bold}
+        (i18n/label (if (= :unread filter-status)
+                      :t/empty-notifications-title-unread
+                      :t/empty-notifications-title-read))]
+       [quo/text
+        {:size  :paragraph-2
+         :style style/empty-subtitle}
+        (i18n/label (if (= :unread filter-status)
+                      :t/empty-notifications-subtitle-unread
+                      :t/empty-notifications-subtitle-read))]])))
 
 (defn tabs
   []
@@ -100,18 +103,22 @@
                              :accessibility-label :tab-system
                              :notification-dot?   (contains? types-with-unread types/system)}]}]))
 
+(defn close-button
+  []
+  [quo/button
+   {:icon                true
+    :type                :blur-bg
+    :size                32
+    :accessibility-label :close-activity-center
+    :override-theme      :dark
+    :style               style/close-button
+    :on-press            #(rf/dispatch [:activity-center/close])}
+   :i/close])
+
 (defn header
   []
   [rn/view
-   [quo/button
-    {:icon                true
-     :type                :blur-bg
-     :size                32
-     :accessibility-label :close-activity-center
-     :override-theme      :dark
-     :style               style/header-button
-     :on-press            #(rf/dispatch [:hide-popover])}
-    :i/close]
+   [close-button]
    [quo/text
     {:size   :heading-1
      :weight :semi-bold
@@ -150,20 +157,18 @@
 
 (defn view
   []
-  [:f>
-   (fn []
-     (react/effect! #(rf/dispatch [:activity-center.notifications/fetch-first-page]))
-     [safe-area/consumer
-      (fn [{:keys [top bottom]}]
-        (let [notifications (rf/sub [:activity-center/filtered-notifications])
-              window-width  (rf/sub [:dimensions/window-width])]
-          [rn/view {:style (style/screen-container window-width top bottom)}
-           [header]
-           [rn/flat-list
-            {:data                      notifications
-             :content-container-style   {:flex-grow 1}
-             :empty-component           [empty-tab]
-             :key-fn                    :id
-             :on-scroll-to-index-failed identity
-             :on-end-reached            #(rf/dispatch [:activity-center.notifications/fetch-next-page])
-             :render-fn                 render-notification}]]))])])
+  [safe-area/consumer
+   (fn [{:keys [bottom]}]
+     (let [notifications (rf/sub [:activity-center/filtered-notifications])
+           window-width  (rf/sub [:dimensions/window-width])]
+       [rn/view
+        {:style (style/screen-container window-width bottom)}
+        [header]
+        [rn/flat-list
+         {:data                      notifications
+          :content-container-style   {:flex-grow 1}
+          :empty-component           [empty-tab]
+          :key-fn                    :id
+          :on-scroll-to-index-failed identity
+          :on-end-reached            #(rf/dispatch [:activity-center.notifications/fetch-next-page])
+          :render-fn                 render-notification}]]))])

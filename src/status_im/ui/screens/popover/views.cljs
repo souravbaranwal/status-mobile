@@ -183,9 +183,6 @@
                   (= :fees-warning view)
                   [signing-sheets/fees-warning]
 
-                  (= :activity-center view)
-                  [activity-center/view]
-
                   :else
                   [view])]]]])))})))
 

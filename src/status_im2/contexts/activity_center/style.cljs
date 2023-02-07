@@ -3,20 +3,21 @@
 
 (def screen-padding 20)
 
-(def header-button
-  {:margin-bottom 12
-   :margin-left   screen-padding})
+(def close-button
+  {:position :absolute
+   :left     screen-padding})
 
 (def header-heading
   {:padding-horizontal screen-padding
-   :padding-vertical   12
+   :margin-top         48
+   :padding-bottom     12
    :color              colors/white})
 
 (defn screen-container
-  [window-width top bottom]
+  [window-width bottom]
   {:flex           1
    :width          window-width
-   :padding-top    (if (pos? top) (+ top 12) 12)
+   :padding-top    12
    :padding-bottom bottom})
 
 (defn notification-container
