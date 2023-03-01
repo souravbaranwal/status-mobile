@@ -321,6 +321,9 @@
 
 (def ^:const status-unread 2)
 (def ^:const status-all 3)
+(def ^:const read-type-read 1)
+(def ^:const read-type-unread 2)
+(def ^:const read-type-all 3)
 
 (defn status
   [filter-status]
@@ -328,6 +331,15 @@
     :unread status-unread
     :all    status-all
     99))
+
+(defn ->rpc-read-type
+  [read-type]
+  (case read-type
+    :read   read-type-read
+    :unread read-type-unread
+    :all    read-type-all
+    ;; Send invalid type, so the backend fails fast.
+    -1))
 
 (defn filter-type->rpc-param
   [filter-type]
@@ -347,15 +359,13 @@
 (rf/defn notifications-fetch
   [{:keys [db]} {:keys [cursor per-page filter-type filter-status reset-data?]}]
   (when-not (get-in db [:activity-center :loading?])
-    (let [per-page  (or per-page (defaults :notifications-per-page))
-          accepted? true]
+    (let [per-page (or per-page (defaults :notifications-per-page))]
       {:db            (assoc-in db [:activity-center :loading?] true)
-       :json-rpc/call [{:method     "wakuext_activityCenterNotificationsBy"
-                        :params     [cursor
-                                     per-page
-                                     (filter-type->rpc-param filter-type)
-                                     (status filter-status)
-                                     accepted?]
+       :json-rpc/call [{:method     "wakuext_activityCenterNotifications"
+                        :params     [{:cursor        cursor
+                                      :limit         per-page
+                                      :activityTypes (filter-type->rpc-param filter-type)
+                                      :readType      (->rpc-read-type filter-status)}]
                         :on-success #(rf/dispatch [:activity-center.notifications/fetch-success
                                                    reset-data? %])
                         :on-error   #(rf/dispatch [:activity-center.notifications/fetch-error
@@ -415,19 +425,16 @@
   to explicitly support fetching notifications for 'pending' contact requests."
   {:events [:activity-center.notifications/fetch-pending-contact-requests]}
   [{:keys [db]}]
-  (let [accepted? true]
-    {:db (assoc-in db [:activity-center :loading?] true)
-     :json-rpc/call
-     [{:method     "wakuext_activityCenterNotificationsBy"
-       :params     [start-or-end-cursor
-                    20
-                    [types/contact-request]
-                    (status :unread)
-                    accepted?]
-       :on-success #(rf/dispatch [:activity-center.notifications/fetch-pending-contact-requests-success
-                                  %])
-       :on-error   #(rf/dispatch [:activity-center.notifications/fetch-error
-                                  types/contact-request :unread %])}]}))
+  {:db (assoc-in db [:activity-center :loading?] true)
+   :json-rpc/call
+   [{:method     "wakuext_activityCenterNotifications"
+     :params     [{:cursor        start-or-end-cursor
+                   :limit         20
+                   :activityTypes [types/contact-request]
+                   :readType      (->rpc-read-type :unread)}]
+     :on-success #(rf/dispatch [:activity-center.notifications/fetch-pending-contact-requests-success %])
+     :on-error   #(rf/dispatch [:activity-center.notifications/fetch-error types/contact-request :unread
+                                %])}]})
 
 (rf/defn notifications-fetch-pending-contact-requests-success
   {:events [:activity-center.notifications/fetch-pending-contact-requests-success]}
@@ -448,14 +455,6 @@
   {:db (update db :activity-center dissoc :loading?)})
 
 ;;;; Unread counters
-
-(defn- ->rpc-read-type
-  [read-type]
-  (case read-type
-    :read   1
-    :unread 2
-    :all    3
-    3))
 
 (rf/defn notifications-fetch-unread-count
   {:events [:activity-center.notifications/fetch-unread-count]}
