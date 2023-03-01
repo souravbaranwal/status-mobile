@@ -449,27 +449,30 @@
 
 ;;;; Unread counters
 
+(defn- ->rpc-read-type
+  [read-type]
+  (case read-type
+    :read   1
+    :unread 2
+    :all    3
+    3))
+
 (rf/defn notifications-fetch-unread-count
   {:events [:activity-center.notifications/fetch-unread-count]}
   [_]
-  {:dispatch-n (mapv (fn [notification-type]
-                       [:activity-center.notifications/fetch-unread-count-for-type notification-type])
-                     types/all-supported)})
-
-(rf/defn notifications-fetch-unread-count-for-type
-  {:events [:activity-center.notifications/fetch-unread-count-for-type]}
-  [_ notification-type]
-  {:json-rpc/call [{:method     "wakuext_unreadAndAcceptedActivityCenterNotificationsCount"
-                    :params     [[notification-type]]
-                    :on-success #(rf/dispatch [:activity-center.notifications/fetch-unread-count-success
-                                               notification-type %])
-                    :on-error   #(rf/dispatch [:activity-center.notifications/fetch-unread-count-error
-                                               %])}]})
+  {:json-rpc/call
+   [{:method     "wakuext_activityCenterNotificationsCount"
+     :params     [{:activityTypes types/all-supported
+                   :readType      (->rpc-read-type :unread)}]
+     :on-success #(rf/dispatch [:activity-center.notifications/fetch-unread-count-success %])
+     :on-error   #(rf/dispatch [:activity-center.notifications/fetch-unread-count-error %])}]})
 
 (rf/defn notifications-fetch-unread-count-success
   {:events [:activity-center.notifications/fetch-unread-count-success]}
-  [{:keys [db]} notification-type result]
-  {:db (assoc-in db [:activity-center :unread-counts-by-type notification-type] result)})
+  [{:keys [db]} response]
+  {:db (assoc-in db
+        [:activity-center :unread-counts-by-type]
+        (activities/parse-notification-counts-response response))})
 
 (rf/defn notifications-fetch-unread-count-error
   {:events [:activity-center.notifications/fetch-unread-count-error]}
