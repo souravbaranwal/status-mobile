@@ -345,21 +345,21 @@
     [filter-type]))
 
 (rf/defn notifications-fetch
-  [{:keys [db]} {:keys [cursor per-page filter-type filter-status reset-data?]}]
-  (when-not (get-in db [:activity-center :loading?])
-    (let [per-page  (or per-page (defaults :notifications-per-page))
-          accepted? true]
-      {:db            (assoc-in db [:activity-center :loading?] true)
-       :json-rpc/call [{:method     "wakuext_activityCenterNotificationsBy"
-                        :params     [cursor
-                                     per-page
-                                     (filter-type->rpc-param filter-type)
-                                     (status filter-status)
-                                     accepted?]
-                        :on-success #(rf/dispatch [:activity-center.notifications/fetch-success
-                                                   reset-data? %])
-                        :on-error   #(rf/dispatch [:activity-center.notifications/fetch-error
-                                                   filter-type filter-status %])}]})))
+  [{:keys [db]} {:keys [cursor request-id per-page filter-type filter-status reset-data?]}]
+  (let [per-page  (or per-page (defaults :notifications-per-page))
+        accepted? true]
+    {:json-rpc/call [{:method     "wakuext_activityCenterNotificationsBy"
+                      :on-success #(rf/dispatch
+                                    [:activity-center.notifications/fetch-success
+                                     request-id
+                                     reset-data? %])
+                      :on-error   #(rf/dispatch [:activity-center.notifications/fetch-error
+                                                 filter-type filter-status %])
+                      :params     [cursor
+                                   per-page
+                                   (filter-type->rpc-param filter-type)
+                                   (status filter-status)
+                                   accepted?]}]}))
 
 (rf/defn notifications-fetch-first-page
   {:events [:activity-center.notifications/fetch-first-page]}
@@ -371,39 +371,52 @@
         filter-status (or filter-status
                           (get-in db
                                   [:activity-center :filter :status]
-                                  (defaults :filter-status)))]
+                                  (defaults :filter-status)))
+        request-id    (str (random-uuid))]
     (rf/merge cofx
               {:db (-> db
+                       (assoc-in [:activity-center :request-id] request-id)
+                       (assoc-in [:activity-center :loading?] true)
                        (assoc-in [:activity-center :filter :type] filter-type)
                        (assoc-in [:activity-center :filter :status] filter-status))}
               (notifications-fetch {:cursor        start-or-end-cursor
-                                    :filter-type   filter-type
                                     :filter-status filter-status
+                                    :filter-type   filter-type
+                                    :request-id    request-id
                                     :reset-data?   true}))))
 
 (rf/defn notifications-fetch-next-page
   {:events [:activity-center.notifications/fetch-next-page]}
   [{:keys [db] :as cofx}]
   (let [{:keys [type status]} (get-in db [:activity-center :filter])
-        cursor                (get-in db [:activity-center :cursor])]
+        cursor                (get-in db [:activity-center :cursor])
+        current-request-id    (get-in db [:activity-center :request-id])]
     (when (fetch-more? cursor)
       (notifications-fetch cofx
                            {:cursor        cursor
-                            :filter-type   type
                             :filter-status status
+                            :filter-type   type
+                            :request-id    current-request-id
                             :reset-data?   false}))))
 
 (rf/defn notifications-fetch-success
   {:events [:activity-center.notifications/fetch-success]}
-  [{:keys [db]} reset-data? {:keys [cursor notifications]}]
-  (let [processed (map activities/<-rpc notifications)]
-    {:db (-> db
-             (assoc-in [:activity-center :cursor] cursor)
-             (update :activity-center dissoc :loading?)
-             (update-in [:activity-center :notifications]
-                        (if reset-data?
-                          (constantly processed)
-                          #(concat % processed))))}))
+  [{:keys [db]} request-id reset-data? {:keys [cursor notifications]}]
+  (let [processed          (map activities/<-rpc notifications)
+        current-request-id (get-in db [:activity-center :request-id])]
+    ;; If the request IDs are different, then it means a new RPC call has been
+    ;; made. This can easily happen if the user switches tabs quicker than the
+    ;; app can fetch & render the notifications. Here the last RPC call should
+    ;; always win, so that the user never sees notifications from tab X on tab
+    ;; Y.
+    (when (= current-request-id request-id)
+      {:db (-> db
+               (assoc-in [:activity-center :cursor] cursor)
+               (update :activity-center dissoc :loading?)
+               (update-in [:activity-center :notifications]
+                          (if reset-data?
+                            (constantly processed)
+                            #(concat % processed))))})))
 
 (rf/defn notifications-fetch-pending-contact-requests
   "Unread contact requests are, in practical terms, the same as pending contact
