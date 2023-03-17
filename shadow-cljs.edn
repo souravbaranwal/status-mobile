@@ -3,7 +3,7 @@
 
  :dependencies [[reagent "1.0.0"]
                 [re-frame "0.12.0"]
-                [binaryage/oops "0.7.0"]
+                [binaryage/oops "0.7.2"]
                 [com.andrewmcveigh/cljs-time "0.5.2"]
                 [status-im/timbre "4.10.0-2-status"]
                 [com.taoensso/encore "2.105.0"]
