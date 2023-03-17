@@ -49,7 +49,11 @@
          :closure-defines
          {status-im2.config/POKT_TOKEN      #shadow/env "POKT_TOKEN"
           status-im2.config/OPENSEA_API_KEY #shadow/env "OPENSEA_API_KEY"}
-         :compiler-options {:output-feature-set :es5
+         :compiler-options {;; Do not change the feature set to es5, otherwise
+                            ;; $jscomp (Clojure Compiler) won't be defined.
+                            ;; Going for :es6 is a must for upgrading to
+                            ;; ShadowCLJS 2.15.13+.
+                            :output-feature-set :es6
                             :closure-defines
                             {re-frame.trace/trace-enabled? true}
                             :source-map false
