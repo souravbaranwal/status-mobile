@@ -1,4 +1,4 @@
-(ns quo2.components.buttons.--tests--.buttons-component-spec
+(ns quo2.components.buttons.button-component-spec
   (:require ["@testing-library/react-native" :as rtl]
             [quo2.components.buttons.button :as button]
             [reagent.core :as reagent]))

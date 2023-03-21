@@ -79,8 +79,8 @@ Joshua Comeau.
 
 ### Don't prepend booleans with is-
 
-It is a common practice in JavaScript and other languages to prepend boolean variable names with `is-*`. 
-In ClojureScript it is common practice to suffix boolean variable names with a `?`. 
+It is a common practice in JavaScript and other languages to prepend boolean variable names with `is-*`.
+In ClojureScript it is common practice to suffix boolean variable names with a `?`.
 There is no need for both of these and so it is preferable to stick with the latter.
 
 ```clojure
@@ -122,11 +122,11 @@ The Status designs have a lot of customization of user and group colors with com
 
 ```clojure
 ;; bad
-(defn community-card [{keys [custom-color]}] 
+(defn community-card [{keys [custom-color]}]
   ...)
 
 ;; good
-(defn community-card [{keys [customization-color]}] 
+(defn community-card [{keys [customization-color]}]
   ...)
 ```
 
@@ -577,9 +577,9 @@ Clojure (JVM) codebases which mirror the sources in a top-level test directory.
 └── models_test.cljs
 ```
 
-Component tests should be created in a separate directory `__tests__`, colocated
-with the source. When the entire component implementation is isolated under a
-single directory, create a test file named `component_spec.cljs` instead.
+Component tests should be created in the same directory as the source component.
+When the entire component implementation is isolated under a single directory,
+create a test file named `component_spec.cljs` instead.
 
 ```
 └── filter

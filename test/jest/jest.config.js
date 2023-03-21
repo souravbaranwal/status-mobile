@@ -19,5 +19,5 @@ module.exports = {
     },
     testEnvironment: 'node',
     rootDir: '../../component-spec',
-    testMatch: ['**/*__tests__*', '**/*.component_spec.js'],
+    testMatch: ['**/*.component_spec.js'],
 };
