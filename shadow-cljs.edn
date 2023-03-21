@@ -73,7 +73,10 @@
    {:closure-defines
     {status-im2.config/POKT_TOKEN      #shadow/env "POKT_TOKEN"
      status-im2.config/OPENSEA_API_KEY #shadow/env "OPENSEA_API_KEY"}
-    :compiler-options {:output-feature-set :es6
+    :compiler-options {;; Feature set ES6 does not work because the Closure
+                       ;; Compiler throws the error NoSuchMethodError:
+                       ;; java.util.Optional.isEmpty()
+                       :output-feature-set :es5
                        ;;disable for android build as there
                        ;;is an intermittent warning with deftype
                        :warnings-as-errors false
