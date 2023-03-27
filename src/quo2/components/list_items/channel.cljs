@@ -11,7 +11,8 @@
 (defn list-item
   [{:keys [name locked? mentions-count unread-messages?
            muted? is-active-channel? emoji channel-color on-press]
-    :or   {channel-color colors/primary-50}}]
+    :or   {channel-color colors/primary-50}}
+   community-muted?]
   [rn/touchable-opacity {:on-press on-press}
    [rn/view
     {:style (merge {:height          48
@@ -53,6 +54,7 @@
          :no-color true}])
      (when (and (not locked?)
                 (not muted?)
+                (not community-muted?)
                 (pos? (int mentions-count)))
        [rn/view
         {:style {:margin-right 2
@@ -60,6 +62,7 @@
         [quo2.counter/counter {:override-bg-color channel-color} mentions-count]])
      (when (and (not locked?)
                 (not muted?)
+                (not community-muted?)
                 (not (pos? (int mentions-count)))
                 unread-messages?)
        [unread-grey-dot :unviewed-messages-public])]]])

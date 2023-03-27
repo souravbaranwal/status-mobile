@@ -34,7 +34,7 @@
    {:keys [name
            locked?
            status
-           muted?
+           muted
            unread-messages?
            unread-mentions-count
            community-icon
@@ -59,7 +59,7 @@
          :accessibility-label :community-name-text
          :number-of-lines     1
          :ellipsize-mode      :tail
-         :style               {:color (when muted?
+         :style               {:color (when muted
                                         (colors/theme-colors
                                          colors/neutral-40
                                          colors/neutral-60))}}
@@ -71,14 +71,14 @@
          {:locked? locked?
           :tokens  tokens}]
         [notification-view
-         {:muted?                muted?
+         {:muted?                muted
           :unread-mentions-count unread-mentions-count
           :unread-messages?      unread-messages?}])]]]])
 
 (defn communities-membership-list-item
   [props
    {:keys [name
-           muted?
+           muted
            unviewed-messages-count
            unviewed-mentions-count
            status
@@ -115,6 +115,6 @@
         {:locked? locked?
          :tokens  tokens}]
        [notification-view
-        {:muted?                muted?
+        {:muted?                muted
          :unread-mentions-count unviewed-mentions-count
          :unread-messages?      (pos? unviewed-messages-count)}])]]])

@@ -916,3 +916,24 @@
                                    {:error %
                                     :event
                                     :communities/check-and-delete-pending-request-to-join-community})}]})
+
+(rf/defn mute-chat-failed
+  {:events [:community/mute-community-failed]}
+  [{:keys [db]} community-id muted? error]
+  (log/error "mute community failed" community-id error)
+  {:db (assoc-in db [:communities community-id :muted] (not muted?))})
+
+(rf/defn mute-community-successfully
+  {:events [:community/mute-community-successful]}
+  [_ community-id]
+  (log/debug "muted community successfully" community-id))
+
+(rf/defn set-community-muted
+  {:events [:community/set-muted]}
+  [{:keys [db]} community-id muted?]
+  {:db            (assoc-in db [:communities community-id :muted] muted?)
+   :json-rpc/call [{:method     "wakuext_setCommunityMuted"
+                    :params     [community-id muted?]
+                    :on-error   #(rf/dispatch [:community/mute-community-failed community-id
+                                               muted? %])
+                    :on-success #(rf/dispatch [:community/mute-community-successful community-id])}]})

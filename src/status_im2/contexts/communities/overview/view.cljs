@@ -69,7 +69,8 @@
   [{:keys [on-category-layout
            community-id
            on-first-channel-height-changed]}
-   channels-list]
+   channels-list
+   community-muted?]
   [rn/view
    {:on-layout #(on-first-channel-height-changed (+ (if platform/ios?
                                                       0
@@ -105,7 +106,7 @@
                  [rn/view
                   {:key        (:id channel)
                    :margin-top 4}
-                  [quo/channel-list-item channel]])
+                  [quo/channel-list-item channel community-muted?]])
                chats)])])
     channels-list)])
 
@@ -222,14 +223,15 @@
 
 (defn community-content
   [{:keys [name description locked joined images
-           status tokens tags id]
+           status tokens tags id muted]
     :as   community}
    pending?
    {:keys [on-category-layout
            on-first-channel-height-changed]}]
   (let [thumbnail-image   (:thumbnail images)
         chats-by-category (rf/sub [:communities/categorized-channels id])
-        users             (rf/sub [:communities/users id])]
+        users             (rf/sub [:communities/users id])
+        community-muted?  muted]
     [rn/view
      [rn/view {:padding-horizontal 20}
       (when (and (not joined)
@@ -269,7 +271,8 @@
       {:on-category-layout              on-category-layout
        :community-id                    id
        :on-first-channel-height-changed on-first-channel-height-changed}
-      (add-on-press-handler-to-categorized-chats id chats-by-category)]]))
+      (add-on-press-handler-to-categorized-chats id chats-by-category)
+      community-muted?]]))
 
 (defn sticky-category-header
   [_]
