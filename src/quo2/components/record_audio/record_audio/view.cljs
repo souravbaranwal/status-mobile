@@ -15,9 +15,11 @@
             [quo2.components.record-audio.record-audio.buttons.lock-button :as lock-button]
             [quo2.components.record-audio.record-audio.buttons.delete-button :as delete-button]
             [quo2.components.record-audio.record-audio.buttons.record-button :as record-button]
-            [clojure.string :as string]))
+            [react-native.platform :as platform]
+            [clojure.string :as string]
+            [utils.datetime :as datetime]))
 
-(def ^:private min-audio-duration-ms 500)
+(def ^:private min-audio-duration-ms 1000)
 (def ^:private max-audio-duration-ms 120000)
 (def ^:private metering-interval 100)
 (def ^:private base-filename "am")
@@ -160,6 +162,7 @@
            audio-current-time-ms (reagent/atom 0)
            seeking-audio? (reagent/atom false)
            force-show-controls? (reagent/atom (some? audio-file))
+           recording-start-ms (atom (datetime/timestamp))
            clear-timeout (atom nil)
            record-button-at-initial-position? (atom true)
            record-button-is-animating? (atom false)
@@ -167,7 +170,6 @@
            recorder-ref (atom nil)
            player-ref (atom nil)
            touch-active? (atom false)
-           recording-timer (atom nil)
            playing-timer (atom nil)
            output-file (atom audio-file)
            reached-max-duration? (atom false)
@@ -177,7 +179,7 @@
            rec-options
            (merge
             audio/default-recorder-options
-            {:filename         (str base-filename (.now js/Date) default-format)
+            {:filename         (str base-filename (datetime/timestamp) default-format)
              :meteringInterval metering-interval})
            destroy-player
            (fn []
@@ -208,13 +210,44 @@
            (fn []
              (audio/destroy-recorder @recorder-ref)
              (reset! recorder-ref nil))
+           recorder-on-meter
+           (fn []
+             (when @recording-start-ms
+               (let [now-ms             (datetime/timestamp)
+                     recording-duration (- now-ms
+                                           @recording-start-ms)]
+                 (reset! recording-length-ms recording-duration)
+                 (when (>= recording-duration max-audio-duration-ms)
+                   (reset! reached-max-duration? (not @locked?))
+                   (reset! reviewing-audio? true)
+                   (reset! idle? false)
+                   (reset! locked? false)
+                   (reset! recording? false)
+                   (reset! ready-to-lock? false)
+                   (reset! ready-to-send? false)
+                   (reset! ready-to-delete? false)
+                   (audio/stop-recording
+                    @recorder-ref
+                    (fn []
+                      (reset! output-file (audio/get-recorder-file-path
+                                           @recorder-ref))
+                      (reload-player nil)
+                      (log/debug "[record-audio] stop recording - success"))
+                    #(log/error "[record-audio] stop recording - error: " %))
+                   (js/setTimeout #(reset! idle? false) 1000)
+                   (reset! recording-length-ms 0)
+                   (reset! recording-start-ms nil)
+                   (when on-reviewing-audio
+                     (on-reviewing-audio (audio/get-recorder-file-path
+                                          @recorder-ref))))
+                 (log/debug "[record-audio] new recorder - on meter"))))
            reload-recorder
            (fn []
              (when @recorder-ref
                (destroy-recorder))
              (reset! recorder-ref (audio/new-recorder
                                    rec-options
-                                   #(log/debug "[record-audio] new recorder - on meter")
+                                   recorder-on-meter
                                    #(log/debug "[record-audio] new recorder - on ended"))))
            reset-recorder
            (fn []
@@ -237,9 +270,6 @@
              (when @clear-timeout
                (js/clearTimeout @clear-timeout)
                (reset! clear-timeout nil))
-             (when @recording-timer
-               (js/clearInterval @recording-timer)
-               (reset! recording-timer nil))
              (when @playing-timer
                (js/clearInterval @playing-timer)
                (reset! playing-timer nil))
@@ -257,7 +287,7 @@
                                              record-button-area)
                      new-recorder           (audio/new-recorder
                                              rec-options
-                                             #(log/debug "[record-audio] new recorder - on meter")
+                                             recorder-on-meter
                                              #(log/debug "[record-audio] new recorder - on ended"))]
                  (reset! touch-timestamp (oops/oget e "nativeEvent.timestamp"))
                  (when-not @reviewing-audio?
@@ -267,44 +297,13 @@
                          (reset! recording? pressed-record-button?))
                        (when pressed-record-button?
                          (reset! playing-audio? false)
-                         (when @recording-timer
-                           (js/clearInterval @recording-timer))
                          (reset! output-file nil)
                          (reset! recorder-ref new-recorder)
+                         (reset! recording-start-ms (datetime/timestamp))
                          (audio/start-recording
                           new-recorder
                           (fn []
                             (reset! audio-current-time-ms 0)
-                            (reset! recording-timer
-                              (js/setInterval
-                               (fn []
-                                 (if (< @recording-length-ms max-audio-duration-ms)
-                                   (reset! recording-length-ms
-                                     (+ @recording-length-ms metering-interval))
-                                   (do
-                                     (reset! reached-max-duration? (not @locked?))
-                                     (reset! reviewing-audio? true)
-                                     (reset! idle? false)
-                                     (reset! locked? false)
-                                     (reset! recording? false)
-                                     (reset! ready-to-lock? false)
-                                     (reset! ready-to-send? false)
-                                     (reset! ready-to-delete? false)
-                                     (audio/stop-recording
-                                      new-recorder
-                                      (fn []
-                                        (reset! output-file (audio/get-recorder-file-path
-                                                             new-recorder))
-                                        (reload-player nil)
-                                        (log/debug "[record-audio] stop recording - success"))
-                                      #(log/error "[record-audio] stop recording - error: " %))
-                                     (js/setTimeout #(reset! idle? false) 1000)
-                                     (js/clearInterval @recording-timer)
-                                     (reset! recording-length-ms 0)
-                                     (when on-reviewing-audio
-                                       (on-reviewing-audio (audio/get-recorder-file-path
-                                                            new-recorder))))))
-                               metering-interval))
                             (log/debug "[record-audio] start recording - success"))
                           #(log/error "[record-audio] start recording - error: " %))
                          (when on-start-recording
@@ -469,8 +468,8 @@
                            (log/debug "[record-audio] stop recording - success"))
                          #(log/error "[record-audio] stop recording - error: " %))
                         (js/setTimeout #(reset! idle? false) 1000)
-                        (js/clearInterval @recording-timer)
                         (reset! recording-length-ms 0)
+                        (reset! recording-start-ms nil)
                         (reset! disabled? false))
                       (if (> touch-timestamp-diff min-touch-duration) 0 250)))
                    (and (not @locked?) (not @reviewing-audio?) (not @record-button-is-animating?))
@@ -495,8 +494,8 @@
                            (reset! ready-to-lock? false)
                            (reset! idle? true)
                            (js/setTimeout #(reset! idle? false) 1000)
-                           (js/clearInterval @recording-timer)
                            (reset! recording-length-ms 0)
+                           (reset! recording-start-ms nil)
                            (reset! disabled? false)
                            (log/debug "[record-audio] stop recording - success"))
                          #(log/error "[record-audio] stop recording - error: " %)))
@@ -561,7 +560,6 @@
             record-button-at-initial-position?
             locked?
             reviewing-audio?
-            recording-timer
             recording-length-ms
             clear-timeout
             touch-active?
