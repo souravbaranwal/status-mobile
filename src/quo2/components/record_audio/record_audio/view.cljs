@@ -20,8 +20,8 @@
             [utils.datetime :as datetime]))
 
 (def ^:private min-audio-duration-ms 1000)
-(def ^:private max-audio-duration-ms 120000)
-(def ^:private metering-interval 100)
+(def ^:private max-audio-duration-ms 120500)
+(def ^:private metering-interval 50)
 (def ^:private base-filename "am")
 (def ^:private default-format ".aac")
 
@@ -299,10 +299,10 @@
                          (reset! playing-audio? false)
                          (reset! output-file nil)
                          (reset! recorder-ref new-recorder)
-                         (reset! recording-start-ms (datetime/timestamp))
                          (audio/start-recording
                           new-recorder
                           (fn []
+                            (reset! recording-start-ms (datetime/timestamp))
                             (reset! audio-current-time-ms 0)
                             (log/debug "[record-audio] start recording - success"))
                           #(log/error "[record-audio] start recording - error: " %))
