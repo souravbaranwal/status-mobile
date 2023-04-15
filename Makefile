@@ -223,6 +223,15 @@ release-ios: watchman-clean ##@build Build release for iOS release
 	$(MAKE) jsbundle-ios && \
 	xcodebuild -workspace ios/StatusIm.xcworkspace -scheme StatusIm -configuration Release -destination 'generic/platform=iOS' -UseModernBuildSystem=N clean archive
 
+
+release-ios-pr: export TARGET := ios
+release-ios-pr: export BUILD_ENV ?= prod
+release-ios-pr: watchman-clean ##@build Build release PR for iOS release
+	@git clean -dxf -f target/ios && \
+	$(MAKE) jsbundle-ios && \
+	xcodebuild -workspace ios/StatusIm.xcworkspace -scheme StatusImPR -configuration Release -destination 'generic/platform=iOS' -UseModernBuildSystem=N clean archive | xcpretty  --no-color
+
+
 jsbundle-android: SHELL := /bin/sh
 jsbundle-android: export TARGET := android
 jsbundle-android: export BUILD_ENV ?= prod

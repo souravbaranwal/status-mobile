@@ -56,7 +56,9 @@ pipeline {
     }
     stage('JSBundle') {
       steps {
-        script { ios.jsbundle() }
+        script {
+        ios.jsbundle()
+        }
       }
     }
     stage('Bundle') {
@@ -64,7 +66,9 @@ pipeline {
         script { api = ios.bundle() }
       }
       post {
-        failure { archiveArtifacts 'ios/logs/*' }
+        failure {
+          archiveArtifacts 'ios/logs/*'
+        }
       }
     }
     stage('Parallel Upload') {
