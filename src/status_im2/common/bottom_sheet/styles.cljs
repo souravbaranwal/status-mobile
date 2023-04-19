@@ -38,10 +38,11 @@
 
 (defn selected-item
   [override-theme]
-  {:position          :absolute
-   :bottom            10
-   :left              0
-   :right             0
-   :border-radius     12
-   :margin-horizontal 8
-   :background-color  (colors/theme-colors colors/white colors/neutral-90 override-theme)})
+  {:position           :absolute
+   :bottom             10
+   :left               0
+   :right              0
+   :border-radius      12
+   :margin-horizontal  8
+   :padding-horizontal 12
+   :background-color   (colors/theme-colors colors/white colors/neutral-90 override-theme)})

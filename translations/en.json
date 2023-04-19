@@ -2150,5 +2150,10 @@
     "user-shared-a-community": "{{user}} shared a community",
     "you-deleted-a-message": "You deleted a message",
     "this-message-was-deleted": "This message was deleted",
-    "user-deleted-a-message": "{{user}} deleted a message"
+    "user-deleted-a-message": "{{user}} deleted a message",
+    "muted-for": "For ",
+    "minutes": "minutes",
+    "hour": "hour",
+    "hours": "hours",
+    "days": "days"
 }

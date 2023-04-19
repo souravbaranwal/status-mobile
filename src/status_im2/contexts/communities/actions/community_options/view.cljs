@@ -3,12 +3,32 @@
             [utils.re-frame :as rf]
             [quo2.core :as quo]
             [status-im2.contexts.communities.actions.see-rules.view :as see-rules]
-            [status-im2.contexts.communities.actions.leave.view :as leave-menu]))
+            [status-im2.contexts.communities.actions.leave.view :as leave-menu]
+            [status-im2.common.mute-drawer.view :as mute-options]))
 
 (defn hide-sheet-and-dispatch
   [event]
   (rf/dispatch [:hide-bottom-sheet])
   (rf/dispatch event))
+
+(defn muted-duration
+  [duration]
+  (cond
+    (= duration 15)
+    (str (i18n/label :muted-for) duration (i18n/label :minutes))
+
+    (= duration 1)
+    (str (i18n/label :muted-for) duration (i18n/label :hour))
+
+    (= duration 8)
+    (str (i18n/label :muted-for) duration (i18n/label :hours))
+
+    (= duration 7)
+    (str (i18n/label :muted-for) duration (i18n/label :days))
+
+    :else
+    ;; (jo-mut) update with "(i18n/label :mute-till-unmute)"
+    ""))
 
 (defn view-members
   [id]
@@ -43,12 +63,21 @@
    :on-press            #(hide-sheet-and-dispatch [:chat.ui/mark-all-read-in-community-pressed id])})
 
 (defn mute-community
-  [id muted?]
+  [id muted? duration]
   {:icon                (if muted? :i/muted :i/activity-center)
    :accessibility-label (if muted? :unmute-community :mute-community)
    :label               (i18n/label (if muted? :t/unmute-community :t/mute-community))
+   :sub-label           (when muted? (muted-duration duration))
    :right-icon          :i/chevron-right
-   :on-press            #(hide-sheet-and-dispatch [:community/set-muted id (not muted?)])})
+   :on-press            (if muted?
+                          #(hide-sheet-and-dispatch [:community/set-muted id (not muted?)])
+                          #(hide-sheet-and-dispatch
+                            [:show-bottom-sheet
+                             {:content (fn []
+                                         [mute-options/mute-drawer
+                                          {:community-id        id
+                                           :type                :community
+                                           :accessibility-label :mute-community-title}])}]))})
 
 (defn community-notification-settings
   [id]
@@ -125,12 +154,12 @@
   (not-joined-options id token-gated?))
 
 (defn joined-options
-  [id token-gated? muted?]
+  [id token-gated? muted? duration]
   [[(view-members id)
     (view-rules id)
     (when token-gated? (view-token-gating id))
     (mark-as-read id)
-    (mute-community id muted?)
+    (mute-community id muted? duration)
     (community-notification-settings id)
     (invite-contacts id)
     (show-qr id)
@@ -138,13 +167,13 @@
    [(assoc (leave-community id) :add-divider? true)]])
 
 (defn owner-options
-  [id token-gated? muted?]
+  [id token-gated? muted? duration]
   [[(view-members id)
     (view-rules id)
     (when token-gated? (view-token-gating id))
     (edit-community id)
     (mark-as-read id)
-    (mute-community id muted?)
+    (mute-community id muted? duration)
     (community-notification-settings id)
     (invite-contacts id)
     (show-qr id)
@@ -153,11 +182,11 @@
 (defn get-context-drawers
   [{:keys [id]}]
   (let [{:keys [token-gated? admin joined
-                muted banList]} (rf/sub [:communities/community id])
-        request-id              (rf/sub [:communities/my-pending-request-to-join id])]
+                muted duration banList]} (rf/sub [:communities/community id])
+        request-id                       (rf/sub [:communities/my-pending-request-to-join id])]
     (cond
-      admin      (owner-options id token-gated? muted)
-      joined     (joined-options id token-gated? muted)
+      admin      (owner-options id token-gated? muted duration)
+      joined     (joined-options id token-gated? muted duration)
       request-id (join-request-sent-options id token-gated? request-id)
       banList    (banned-options id token-gated?)
       :else      (not-joined-options id token-gated?))))

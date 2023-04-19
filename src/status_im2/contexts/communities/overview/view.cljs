@@ -200,15 +200,30 @@
            [category (update v :chats add-on-press)])
          categorized-chats)))
 
+(defn muted-status
+  [muted? icon-color]
+  (when muted?
+    [quo/icon :i/muted
+     {:container-style {:align-items     :center
+                        :margin-left     6
+                        :justify-content :center}
+      :resize-mode     :center
+      :size            20
+      :color           icon-color}]))
+
 (defn community-header
-  [name]
-  [quo/text
-   {:accessibility-label :chat-name-text
-    :number-of-lines     1
-    :ellipsize-mode      :tail
-    :weight              :semi-bold
-    :size                :heading-1}
-   name])
+  [name muted? icon-color]
+  [rn/view
+   {:flex-direction :row
+    :align-items    :center}
+   [quo/text
+    {:accessibility-label :chat-name-text
+     :number-of-lines     1
+     :ellipsize-mode      :tail
+     :weight              :semi-bold
+     :size                :heading-1}
+    name]
+   [muted-status muted? icon-color]])
 
 (defn community-description
   [description]
@@ -231,7 +246,8 @@
   (let [thumbnail-image   (:thumbnail images)
         chats-by-category (rf/sub [:communities/categorized-channels id])
         users             (rf/sub [:communities/users id])
-        community-muted?  muted]
+        community-muted?  muted
+        icon-color        (colors/theme-colors colors/neutral-50 colors/neutral-40)]
     [rn/view
      [rn/view {:padding-horizontal 20}
       (when (and (not joined)
@@ -260,7 +276,7 @@
           :right    12}
          [get-tag joined]])
       [rn/view {:margin-top 56}
-       [community-header name]]
+       [community-header name community-muted? icon-color]]
       [community-description description]
       [quo/community-stats-column :card-view]
       [rn/view {:margin-top 12}]
