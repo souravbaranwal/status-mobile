@@ -2115,5 +2115,9 @@
     "user-shared-a-community": "{{user}} shared a community",
     "you-deleted-a-message": "You deleted a message",
     "this-message-was-deleted": "This message was deleted",
-    "user-deleted-a-message": "{{user}} deleted a message"
+    "user-deleted-a-message": "{{user}} deleted a message",
+    "view-channel-members-and-details": "View channel members and details",
+    "unmute-channel": "Unmute channel",
+    "share-channel": "Share channel",
+    "all-messages": "All messages"
 }

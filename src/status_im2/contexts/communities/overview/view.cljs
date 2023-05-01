@@ -13,7 +13,8 @@
             [status-im2.contexts.communities.actions.community-options.view :as options]
             [quo2.components.navigation.floating-shell-button :as floating-shell-button]
             [status-im2.contexts.communities.overview.utils :as utils]
-            [utils.re-frame :as rf]))
+            [utils.re-frame :as rf]
+            [status-im2.contexts.communities.menus.channel-options.view :as channel-options]))
 
 (defn preview-user-list
   [user-list]
@@ -172,29 +173,43 @@
                  :community-avatar-img-src thumbnail-image
                  :gates                    tokens}}]])
 
-(defn add-on-press-handler
-  [community-id {:keys [name emoji id locked? token-gating] :or {locked? false} :as chat}]
+(defn add-handlers
+  [community-id
+   {:keys [name emoji id locked? token-gating]
+    :or   {locked? false}
+    :as   chat}]
   (merge
    chat
    (if (and locked? token-gating)
-     {:on-press #(open-channel-token-gating-details
-                  name
-                  token-gating
-                  emoji
-                  (colors/custom-color :pink 50))}
+     {:on-press      #(open-channel-token-gating-details
+                       name
+                       token-gating
+                       emoji
+                       (colors/custom-color :pink 50))
+      :on-long-press #(rf/dispatch
+                       [:show-bottom-sheet
+                        {:content (fn []
+                                    [channel-options/channel-options-bottom-sheet community-id id])}])
+      :community-id  community-id}
 
      (when (and (not locked?) id)
-       {:on-press (fn []
-                    (rf/dispatch [:dismiss-keyboard])
-                    (rf/dispatch [:chat/navigate-to-chat (str community-id id)]))}))))
+       {:on-press      (fn []
+                         (rf/dispatch [:dismiss-keyboard])
+                         (rf/dispatch [:chat/navigate-to-chat (str community-id id)])
+                         (rf/dispatch [:search/home-filter-changed nil]))
+        :on-long-press #(rf/dispatch
+                         [:show-bottom-sheet
+                          {:content (fn []
+                                      [channel-options/channel-options-bottom-sheet community-id id])}])
+        :community-id  community-id}))))
 
-(defn add-on-press-handler-to-chats
+(defn add-handlers-to-chats
   [community-id chats]
-  (mapv (partial add-on-press-handler community-id) chats))
+  (mapv (partial add-handlers community-id) chats))
 
-(defn add-on-press-handler-to-categorized-chats
+(defn add-handlers-to-categorized-chats
   [community-id categorized-chats]
-  (let [add-on-press (partial add-on-press-handler-to-chats community-id)]
+  (let [add-on-press (partial add-handlers-to-chats community-id)]
     (map (fn [[category v]]
            [category (update v :chats add-on-press)])
          categorized-chats)))
@@ -269,7 +284,7 @@
       {:on-category-layout              on-category-layout
        :community-id                    id
        :on-first-channel-height-changed on-first-channel-height-changed}
-      (add-on-press-handler-to-categorized-chats id chats-by-category)]]))
+      (add-handlers-to-categorized-chats id chats-by-category)]]))
 
 (defn sticky-category-header
   [_]

@@ -10,9 +10,11 @@
 
 (defn list-item
   [{:keys [name locked? mentions-count unread-messages?
-           muted? is-active-channel? emoji channel-color on-press]
+           muted? is-active-channel? emoji channel-color on-press on-long-press]
     :or   {channel-color colors/primary-50}}]
-  [rn/touchable-opacity {:on-press on-press}
+  [rn/touchable-opacity
+   {:on-press      on-press
+    :on-long-press on-long-press}
    [rn/view
     {:style (merge {:height          48
                     :display         :flex
@@ -40,7 +42,7 @@
      [quo2.text/text
       {:style  (merge {:margin-left 12}
                       (when (and (not locked?) muted?)
-                        {:color (if (theme/dark?) colors/neutral-60 colors/neutral-40)}))
+                        {:color colors/neutral-40}))
        :weight :medium
        :size   :paragraph-1} (str "# " name)]]
     [rn/view
@@ -50,7 +52,7 @@
                 muted?)
        [quo2.icons/icon :i/muted
         {:size     20
-         :no-color true}])
+         :color colors/neutral-40}])
      (when (and (not locked?)
                 (not muted?)
                 (pos? (int mentions-count)))
