@@ -72,7 +72,8 @@
       [reanimated/view
        {:style (reanimated/apply-animations-to-style
                 {:opacity bg-opacity}
-                {:flex 1 :background-color colors/neutral-100-opa-70})}]]
+                {:flex             1
+                 :background-color colors/neutral-100-opa-70})}]]
      ;; sheet
      (cond->>
        [reanimated/view
