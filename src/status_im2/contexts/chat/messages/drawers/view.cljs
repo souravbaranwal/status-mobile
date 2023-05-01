@@ -6,7 +6,10 @@
             [status-im2.common.not-implemented :as not-implemented]
             [status-im2.constants :as constants]
             [utils.i18n :as i18n]
-            [utils.re-frame :as rf]))
+            [utils.re-frame :as rf]
+            [reagent.core :as reagent]
+            [status-im2.common.contact-list-item.view :as contact-list-item]
+            [status-im2.contexts.chat.messages.drawers.style :as style]))
 
 (defn pin-message
   [{:keys [chat-id pinned pinned-by] :as message-data}]
@@ -194,3 +197,70 @@
               :on-press            (fn []
                                      (rf/dispatch [:hide-bottom-sheet])
                                      (when on-press (on-press)))}]))]])))
+
+(defn get-reaction-authors-accessibility-id
+  [reaction-type]
+  (-> reaction-type
+      constants/reactions
+      name
+      (str "-reaction-count")))
+
+(defn contact-list-item-fn
+  [{:keys [from compressed-key]}]
+  (let [[primary-name secondary-name] (rf/sub [:contacts/contact-two-names-by-identity
+                                               from])
+        {:keys [ens-verified added?]} (rf/sub [:contacts/contact-by-address from])]
+    ^{:key (str compressed-key)}
+    [contact-list-item/contact-list-item
+     {:on-press #(rf/dispatch [:chat.ui/show-profile from])}
+     {:primary-name   primary-name
+      :secondary-name secondary-name
+      :public-key     from
+      :compressed-key compressed-key
+      :ens-verified   ens-verified
+      :added?         added?}]))
+
+(defn get-tabs-data
+  [reaction-authors selected-tab]
+  (mapv (fn [[reaction-type author-details]]
+          ^{:key (str reaction-type)}
+          {:id    reaction-type
+           :label [rn/view {:style style/tab}
+                   [quo/icon
+                    (get constants/reactions reaction-type)
+                    {:no-color        true
+                     :container-style style/tab-icon}]
+                   [quo/text
+                    {:weight :medium
+                     :size   :paragraph-1
+                     :style  (style/tab-count (= @selected-tab
+                                                 reaction-type))}
+                    (count author-details)]]})
+        reaction-authors))
+
+(defn reaction-authors-comp
+  [selected-tab reaction-authors show-reaction-author-list?]
+  (rn/use-effect (fn []
+                   (fn []
+                     (reset! show-reaction-author-list? false)))
+                 [reaction-authors])
+  [:<>
+   [rn/view style/tabs-container
+    [quo/tabs
+     {:size           32
+      :scrollable?    true
+      :on-change      #(reset! selected-tab %)
+      :default-active @selected-tab
+      :data           (get-tabs-data reaction-authors selected-tab)}]]
+   [rn/scroll-view
+    {:style {:height 320
+             :flex   1}}
+    (doall
+     (map contact-list-item-fn
+          (get reaction-authors @selected-tab)))]])
+
+(defn reaction-authors
+  [reaction-authors show-reaction-author-list?]
+  (let [selected-tab (reagent/atom (first (keys reaction-authors)))]
+    (fn []
+      [:f> reaction-authors-comp selected-tab reaction-authors show-reaction-author-list?])))

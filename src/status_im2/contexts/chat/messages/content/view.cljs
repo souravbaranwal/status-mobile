@@ -144,18 +144,19 @@
               [status/status outgoing-status])]]]]))))
 
 (defn message-with-reactions
-  [{:keys [pinned-by mentioned in-pinned-view? content-type last-in-group? message-id] :as message-data}
-   {:keys [chat-id] :as context}
-   keyboard-shown]
-  [rn/view
-   {:style               (style/message-container in-pinned-view? pinned-by mentioned last-in-group?)
-    :accessibility-label :chat-item}
-   (when pinned-by
-     [pin/pinned-by-view pinned-by])
-   (if (#{constants/content-type-system-text constants/content-type-community
-          constants/content-type-system-pinned-message
-          constants/content-type-contact-request}
-        content-type)
-     [system-message-content message-data]
-     [user-message-content message-data context keyboard-shown])
-   [reactions/message-reactions-row chat-id message-id]])
+  [{:keys [pinned-by mentioned in-pinned-view? content-type last-in-group?] :as message-data}
+   context]
+  (let [user-message-content-instance (reagent/as-element [user-message-content message-data context])
+        show-reaction-authors-sheet?  (reagent/atom false)]
+    [rn/view
+     {:style               (style/message-container in-pinned-view? pinned-by mentioned last-in-group?)
+      :accessibility-label :chat-item}
+     (when pinned-by
+       [pin/pinned-by-view pinned-by])
+     (if (#{constants/content-type-system-text constants/content-type-community
+            constants/content-type-contact-request}
+          content-type)
+       [system-message-content message-data]
+       user-message-content-instance)
+     [reactions/message-reactions-row message-data user-message-content-instance
+      show-reaction-authors-sheet?]]))

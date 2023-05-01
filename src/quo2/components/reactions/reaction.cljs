@@ -21,10 +21,11 @@
 
 (defn reaction
   "Add your emoji as a param here"
-  [{:keys [emoji clicks neutral? on-press accessibility-label]}]
+  [{:keys [emoji clicks neutral? on-press accessibility-label on-long-press]}]
   (let [numeric-value (int clicks)]
     [rn/touchable-opacity
      {:on-press            on-press
+      :on-long-press       on-long-press
       :accessibility-label accessibility-label
       :style               (style/reaction neutral?)}
      [icons/icon emoji

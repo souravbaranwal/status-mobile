@@ -4,7 +4,9 @@
             [status-im.data-store.reactions :as data-store.reactions]
             [status-im.transport.message.protocol :as message.protocol]
             [utils.re-frame :as rf]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [clojure.set :as set]
+            [utils.transforms :as transforms]))
 
 (defn update-reaction
   [acc retracted chat-id message-id emoji-id emoji-reaction-id reaction]
@@ -105,3 +107,39 @@
        acc))
    []
    reactions))
+
+(defn- <-rpc
+  [emoji-reaction]
+  (-> emoji-reaction
+      (set/rename-keys
+       {:emojiId       :emoji-id
+        :compressedKey :compressed-key})
+      (select-keys [:emoji-id :from :compressed-key])))
+
+(defn- format-response
+  [response]
+  (->> (transforms/js->clj response)
+       (map <-rpc)
+       (group-by :emoji-id)
+       (into (sorted-map))))
+
+(rf/defn save-emoji-reaction-details
+  {:events [:chat/save-emoji-reaction-details]}
+  [{:keys [db]} message-reactions]
+  {:db (assoc-in db [:chats (:current-chat-id db) :message/reaction-list] message-reactions)})
+
+(rf/defn clear-emoji-reaction-details
+  {:events [:chat/clear-emoji-reaction-author-details]}
+  [{:keys [db]} message-reactions]
+  {:db (update-in db [:chats (:current-chat-id db)] dissoc :message/reaction-list)})
+
+(rf/defn emoji-reactions-by-message-id
+  {:events [:chat.ui/emoji-reactions-by-message-id]}
+  [{:keys [db]} {:keys [message-id chat-id]}]
+  {:json-rpc/call [{:method      "wakuext_emojiReactionsByChatIDMessageID"
+                    :params      [chat-id message-id]
+                    :js-response true
+                    :on-error    #(log/error "failed to fetch emoji reaction by message-id: "
+                                             {:message-id message-id :error %})
+                    :on-success  #(rf/dispatch [:chat/save-emoji-reaction-details
+                                                (format-response %)])}]})

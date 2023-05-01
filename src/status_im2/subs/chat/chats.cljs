@@ -99,6 +99,13 @@
    synced-from))
 
 (re-frame/reg-sub
+ :chats/reaction-authors-list
+ (fn [[_ chat-id] _]
+   (re-frame/subscribe [:chat-by-id chat-id]))
+ (fn [{:message/keys [reaction-list]}]
+   reaction-list))
+
+(re-frame/reg-sub
  :chats/muted
  (fn [[_ chat-id] _]
    (re-frame/subscribe [:chat-by-id chat-id]))
