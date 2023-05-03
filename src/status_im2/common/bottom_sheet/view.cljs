@@ -87,4 +87,6 @@
        ;; handle
        [rn/view {:style (styles/handle override-theme)}]
        ;; content
-       [content]])]))
+       [content]]
+       enable-scroll?
+       (conj [gesture/gesture-detector {:gesture sheet-gesture}]))]))

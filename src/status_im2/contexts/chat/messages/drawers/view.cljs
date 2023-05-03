@@ -240,11 +240,7 @@
         reaction-authors))
 
 (defn reaction-authors-comp
-  [selected-tab reaction-authors show-reaction-author-list?]
-  (rn/use-effect (fn []
-                   (fn []
-                     (reset! show-reaction-author-list? false)))
-                 [reaction-authors])
+  [selected-tab reaction-authors]
   [:<>
    [rn/view style/tabs-container
     [quo/tabs
@@ -261,7 +257,7 @@
           (get reaction-authors @selected-tab)))]])
 
 (defn reaction-authors
-  [reaction-authors show-reaction-author-list? selected-reaction]
+  [reaction-authors selected-reaction]
   (let [selected-tab (reagent/atom (or selected-reaction (first (keys reaction-authors))))]
     (fn []
-      [:f> reaction-authors-comp selected-tab reaction-authors show-reaction-author-list?])))
+      [:f> reaction-authors-comp selected-tab reaction-authors])))

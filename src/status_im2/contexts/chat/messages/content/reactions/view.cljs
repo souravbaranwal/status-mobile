@@ -17,33 +17,31 @@
                     :emoji-id   emoji-id}])))
 
 (defn- on-long-press
-  [chat-id message-id emoji-id show-reaction-author-list?]
-  (reset! show-reaction-author-list? true)
+  [chat-id message-id emoji-id show-reaction-authors-sheet?]
+  (reset! show-reaction-authors-sheet? true)
   (rf/dispatch [:chat.ui/emoji-reactions-by-message-id
                 {:message-id         message-id
                  :chat-id            chat-id
                  :long-pressed-emoji emoji-id}]))
 
 (defn message-reactions-row-comp
-  [{:keys [message-id chat-id]} user-message-content show-reaction-author-list?]
-  (let [reactions                                 (rf/sub [:chats/message-reactions message-id chat-id])
+  [{:keys [message-id chat-id]} user-message-content show-reaction-authors-sheet?]
+  (let [reactions                                                       (rf/sub [:chats/message-reactions message-id chat-id])
         [reaction-authors-list
-         reaction-authors-list-selected-reaction] (rf/sub [:message/reaction-authors-list chat-id])]
-    (rn/use-effect (fn []
-                     (when (and reaction-authors-list @show-reaction-author-list?)
-                       (rf/dispatch [:dismiss-keyboard])
-                       (rf/dispatch
-                        [:show-bottom-sheet
-                         {:content                 (fn [] [drawers/reaction-authors
-                                                           reaction-authors-list
-                                                           show-reaction-author-list?
-                                                           reaction-authors-list-selected-reaction])
-                          :selected-item           (fn []
-                                                     user-message-content)
-                          :padding-bottom-override 0}]))
-                     (fn []
-                       (rf/dispatch [:chat/clear-emoji-reaction-author-details])))
-                   [reaction-authors-list])
+         reaction-authors-list-selected-reaction] (rf/sub [:message/reaction-authors-list chat-id])
+        _show-sheet                                                     (when (and reaction-authors-list @show-reaction-authors-sheet?)
+                                                                          (rf/dispatch [:dismiss-keyboard])
+                                                                          (rf/dispatch
+                                                                           [:show-bottom-sheet
+                                                                            {:on-close               (fn []
+                                                                                                        (reset! show-reaction-authors-sheet? false)
+                                                                                                        (rf/dispatch [:chat/clear-emoji-reaction-author-details]))
+                                                                             :content                 (fn [] [drawers/reaction-authors
+                                                                                                              reaction-authors-list
+                                                                                                              reaction-authors-list-selected-reaction])
+                                                                             :selected-item           (fn []
+                                                                                                        user-message-content)
+                                                                             :padding-bottom-override 0}]))]
     [:<>
      (when (seq reactions)
        [rn/view
@@ -59,20 +57,20 @@
              :neutral?            own
              :clicks              quantity
              :on-press            #(on-press own message-id emoji-id emoji-reaction-id)
-             :on-long-press       #(on-long-press chat-id message-id emoji-id show-reaction-author-list?)
+             :on-long-press       #(on-long-press chat-id message-id emoji-id show-reaction-authors-sheet?)
              :accessibility-label (str "emoji-reaction-" emoji-id)}]])
         [quo/add-reaction
          {:on-press (fn []
                       (rf/dispatch [:dismiss-keyboard])
                       (rf/dispatch
                        [:show-bottom-sheet
-                        {:content (fn [] [drawers/reactions
-                                          {:chat-id    chat-id
-                                           
-                                           :message-id message-id}])
-                         :selected-item           (fn []
-                                                                      user-message-content)}]))}]])]))
+                        {:content       (fn [] [drawers/reactions
+                                                {:chat-id    chat-id
+
+                                                 :message-id message-id}])
+                         :selected-item (fn []
+                                          user-message-content)}]))}]])]))
 
 (defn message-reactions-row
-  [message-data user-message-content show-reaction-author-list?]
-  [:f> message-reactions-row-comp message-data user-message-content show-reaction-author-list?])
+  [message-data user-message-content show-reaction-authors-sheet?]
+  [:f> message-reactions-row-comp message-data user-message-content show-reaction-authors-sheet?])
