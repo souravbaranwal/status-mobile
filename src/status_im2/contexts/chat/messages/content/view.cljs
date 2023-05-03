@@ -1,29 +1,28 @@
 (ns status-im2.contexts.chat.messages.content.view
-  (:require
-    [react-native.core :as rn]
-    [quo2.foundations.colors :as colors]
-    [react-native.platform :as platform]
-    [status-im2.contexts.chat.messages.content.style :as style]
-    [status-im2.contexts.chat.messages.content.pin.view :as pin]
-    [status-im2.constants :as constants]
-    [status-im2.contexts.chat.messages.content.unknown.view :as content.unknown]
-    [status-im2.contexts.chat.messages.content.text.view :as content.text]
-    [status-im2.contexts.chat.messages.drawers.view :as drawers]
-    [status-im2.contexts.chat.messages.content.reactions.view :as reactions]
-    [status-im2.contexts.chat.messages.content.status.view :as status]
-    [status-im2.contexts.chat.messages.content.system.text.view :as system.text]
-    [status-im2.contexts.chat.messages.content.album.view :as album]
-    [status-im2.contexts.chat.messages.avatar.view :as avatar]
-    [status-im2.contexts.chat.messages.content.image.view :as image]
-    [status-im2.contexts.chat.messages.content.audio.view :as audio]
-    [quo2.core :as quo]
-    [utils.re-frame :as rf]
-    [status-im.ui2.screens.chat.messages.message :as old-message]
-    [status-im2.contexts.chat.composer.reply.view :as reply]
-    [status-im2.common.not-implemented :as not-implemented]
-    [utils.datetime :as datetime]
-    [reagent.core :as reagent]
-    [utils.address :as address]))
+  (:require [react-native.core :as rn]
+            [quo2.foundations.colors :as colors]
+            [react-native.platform :as platform]
+            [status-im2.contexts.chat.messages.content.style :as style]
+            [status-im2.contexts.chat.messages.content.pin.view :as pin]
+            [status-im2.constants :as constants]
+            [status-im2.contexts.chat.messages.content.unknown.view :as content.unknown]
+            [status-im2.contexts.chat.messages.content.text.view :as content.text]
+            [status-im2.contexts.chat.messages.drawers.view :as drawers]
+            [status-im2.contexts.chat.messages.content.reactions.view :as reactions]
+            [status-im2.contexts.chat.messages.content.status.view :as status]
+            [status-im2.contexts.chat.messages.content.system.text.view :as system.text]
+            [status-im2.contexts.chat.messages.content.album.view :as album]
+            [status-im2.contexts.chat.messages.avatar.view :as avatar]
+            [status-im2.contexts.chat.messages.content.image.view :as image]
+            [status-im2.contexts.chat.messages.content.audio.view :as audio]
+            [quo2.core :as quo]
+            [utils.re-frame :as rf]
+            [status-im.ui2.screens.chat.messages.message :as old-message]
+            [status-im2.common.not-implemented :as not-implemented]
+            [utils.datetime :as datetime]
+            [reagent.core :as reagent]
+            [utils.address :as address]
+            [quo.gesture-handler :as gesture-handler]))
 
 (def delivery-state-showing-time-ms 3000)
 
@@ -82,7 +81,7 @@
   (let [show-delivery-state? (reagent/atom false)]
     (fn [{:keys [content-type quoted-message content outgoing outgoing-status] :as message-data}
          context
-         keyboard-shown]
+         is-message-reaction-view?]
       (let [first-image     (first (:album message-data))
             outgoing-status (if (= content-type constants/content-type-album)
                               (:outgoing-status first-image)
@@ -100,7 +99,7 @@
           :style               {:border-radius 16
                                 :opacity       (if (and outgoing (= outgoing-status :sending)) 0.5 1)}
           :on-press            (fn []
-                                 (if (and platform/ios? @keyboard-shown)
+                                 (if platform/ios?
                                    (rn/dismiss-keyboard!)
                                    (when (and outgoing
                                               (not= outgoing-status :sending)
@@ -116,47 +115,51 @@
            {:style {:padding-horizontal 12
                     :flex-direction     :row}}
            [avatar-container message-data]
-           [rn/view
-            {:style {:margin-left 8
-                     :flex        1}}
-            [author message-data]
-            (case content-type
+           (into
+            (if is-message-reaction-view?
+              [gesture-handler/scroll-view]
+              [rn/view])
+            [{:style (cond-> {:margin-left 8
+                              :flex        1}
+                       is-message-reaction-view? (assoc :max-height 400))}
+             [author message-data]
+             (case content-type
 
-              constants/content-type-text [content.text/text-content message-data context]
+               constants/content-type-text [content.text/text-content message-data context]
 
-              constants/content-type-emoji
-              [not-implemented/not-implemented [old-message/emoji message-data]]
+               constants/content-type-emoji
+               [not-implemented/not-implemented [old-message/emoji message-data]]
 
-              constants/content-type-sticker
-              [not-implemented/not-implemented [old-message/sticker message-data]]
+               constants/content-type-sticker
+               [not-implemented/not-implemented [old-message/sticker message-data]]
 
               constants/content-type-audio
               [audio/audio-message message-data context]
 
-              constants/content-type-image
-              [image/image-message 0 message-data context on-long-press]
+               constants/content-type-image
+               [image/image-message 0 message-data context on-long-press]
 
-              constants/content-type-album
-              [album/album-message message-data context on-long-press]
+               constants/content-type-album
+               [album/album-message message-data context on-long-press]
 
-              [not-implemented/not-implemented [content.unknown/unknown-content message-data]])
-            (when @show-delivery-state?
-              [status/status outgoing-status])]]]]))))
+               [not-implemented/not-implemented [content.unknown/unknown-content message-data]])
+             (when @show-delivery-state?
+               [status/status outgoing-status])])]]]))))
 
 (defn message-with-reactions
   [{:keys [pinned-by mentioned in-pinned-view? content-type last-in-group?] :as message-data}
    context]
-  (let [user-message-content-instance (reagent/as-element [user-message-content message-data context])
-        show-reaction-authors-sheet?  (reagent/atom false)]
+  (let [show-reaction-authors-sheet? (reagent/atom false)]
     [rn/view
      {:style               (style/message-container in-pinned-view? pinned-by mentioned last-in-group?)
       :accessibility-label :chat-item}
      (when pinned-by
        [pin/pinned-by-view pinned-by])
      (if (#{constants/content-type-system-text constants/content-type-community
-            constants/content-type-contact-request}
+            constants/content-type-contact-request
+            constants/content-type-system-pinned-message}
           content-type)
        [system-message-content message-data]
-       user-message-content-instance)
-     [reactions/message-reactions-row message-data user-message-content-instance
+       [user-message-content message-data context false])
+     [reactions/message-reactions-row message-data [user-message-content message-data context true]
       show-reaction-authors-sheet?]]))
