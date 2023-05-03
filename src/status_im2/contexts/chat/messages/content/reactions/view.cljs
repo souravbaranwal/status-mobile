@@ -60,38 +60,16 @@
             {:emoji               (get constants/reactions emoji-id)
              :neutral?            own
              :clicks              quantity
-<<<<<<< HEAD
-<<<<<<< HEAD
              :on-press            #(on-press own message-id emoji-id emoji-reaction-id)
              :on-long-press       #(on-long-press message-id
                                                   emoji-id
                                                   show-reaction-authors-sheet?)
-=======
-             :on-press            (if own
-                                    #(rf/dispatch [:models.reactions/send-emoji-reaction-retraction
-                                                   {:message-id        message-id
-                                                    :emoji-id          emoji-id
-                                                    :emoji-reaction-id emoji-reaction-id}])
-                                    #(rf/dispatch [:models.reactions/send-emoji-reaction
-                                                   {:message-id message-id
-                                                    :emoji-id   emoji-id}]))
-             :on-long-press       (fn []
-                                    (reset! show-reaction-author-list? true)
-                                    (rf/dispatch [:chat.ui/emoji-reactions-by-message-id
-                                                  {:message-id message-id
-                                                   :chat-id    chat-id}]))
->>>>>>> af14feaf9 (Show message reactions authors sheet)
-=======
-             :on-press            #(on-press own message-id emoji-id emoji-reaction-id)
-             :on-long-press       #(on-long-press chat-id message-id emoji-id show-reaction-author-list?)
->>>>>>> 8a5f7fc30 (Fixes)
              :accessibility-label (str "emoji-reaction-" emoji-id)}]])
         [quo/add-reaction
          {:on-press (fn []
                       (rf/dispatch [:dismiss-keyboard])
                       (rf/dispatch
                        [:show-bottom-sheet
-<<<<<<< HEAD
                         {:content       (fn [] [drawers/reactions
                                                 {:chat-id    chat-id
                                                  :message-id message-id}])
@@ -101,12 +79,3 @@
 (defn message-reactions-row
   [message-data user-message-content show-reaction-authors-sheet?]
   [:f> message-reactions-row-comp message-data user-message-content show-reaction-authors-sheet?])
-=======
-                        {:content (fn [] [drawers/reactions
-                                          {:chat-id    chat-id
-                                           :message-id message-id}])}]))}]])]))
-
-(defn message-reactions-row
-  [message-data user-message-content show-reaction-author-list?]
-  [:f> message-reactions-row-comp message-data user-message-content show-reaction-author-list?])
->>>>>>> af14feaf9 (Show message reactions authors sheet)
