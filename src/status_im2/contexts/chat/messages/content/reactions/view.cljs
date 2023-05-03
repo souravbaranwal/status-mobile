@@ -61,6 +61,7 @@
              :neutral?            own
              :clicks              quantity
 <<<<<<< HEAD
+<<<<<<< HEAD
              :on-press            #(on-press own message-id emoji-id emoji-reaction-id)
              :on-long-press       #(on-long-press message-id
                                                   emoji-id
@@ -80,6 +81,10 @@
                                                   {:message-id message-id
                                                    :chat-id    chat-id}]))
 >>>>>>> af14feaf9 (Show message reactions authors sheet)
+=======
+             :on-press            #(on-press own message-id emoji-id emoji-reaction-id)
+             :on-long-press       #(on-long-press chat-id message-id emoji-id show-reaction-author-list?)
+>>>>>>> 8a5f7fc30 (Fixes)
              :accessibility-label (str "emoji-reaction-" emoji-id)}]])
         [quo/add-reaction
          {:on-press (fn []
@@ -98,7 +103,8 @@
   [:f> message-reactions-row-comp message-data user-message-content show-reaction-authors-sheet?])
 =======
                         {:content (fn [] [drawers/reactions
-                                          {:chat-id chat-id :message-id message-id}])}]))}]])]))
+                                          {:chat-id    chat-id
+                                           :message-id message-id}])}]))}]])]))
 
 (defn message-reactions-row
   [message-data user-message-content show-reaction-author-list?]

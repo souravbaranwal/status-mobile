@@ -85,8 +85,12 @@
   (let [show-delivery-state? (reagent/atom false)]
     (fn [{:keys [content-type quoted-message content outgoing outgoing-status] :as message-data}
          context
+<<<<<<< HEAD
          keyboard-shown
          message-reaction-view?]
+=======
+         is-message-reaction-view?]
+>>>>>>> 8a5f7fc30 (Fixes)
       (let [first-image     (first (:album message-data))
             outgoing-status (if (= content-type constants/content-type-album)
                               (:outgoing-status first-image)
@@ -105,7 +109,7 @@
           :style               {:border-radius 16
                                 :opacity       (if (and outgoing (= outgoing-status :sending)) 0.5 1)}
           :on-press            (fn []
-                                 (if (and platform/ios? @keyboard-shown)
+                                 (if platform/ios?
                                    (rn/dismiss-keyboard!)
                                    (when (and outgoing
                                               (not= outgoing-status :sending)
