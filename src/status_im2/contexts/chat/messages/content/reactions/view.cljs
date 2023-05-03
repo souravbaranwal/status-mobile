@@ -8,11 +8,11 @@
 (defn- on-press
   [own message-id emoji-id emoji-reaction-id]
   (if own
-    #(rf/dispatch [:models.reactions/send-emoji-reaction-retraction
+    (rf/dispatch [:models.reactions/send-emoji-reaction-retraction
                    {:message-id        message-id
                     :emoji-id          emoji-id
                     :emoji-reaction-id emoji-reaction-id}])
-    #(rf/dispatch [:models.reactions/send-emoji-reaction
+    (rf/dispatch [:models.reactions/send-emoji-reaction
                    {:message-id message-id
                     :emoji-id   emoji-id}])))
 
@@ -31,6 +31,7 @@
          reaction-authors-list-selected-reaction] (rf/sub [:message/reaction-authors-list chat-id])]
     (rn/use-effect (fn []
                      (when (and reaction-authors-list @show-reaction-author-list?)
+                       (rf/dispatch [:dismiss-keyboard])
                        (rf/dispatch
                         [:show-bottom-sheet
                          {:content                 (fn [] [drawers/reaction-authors
@@ -67,7 +68,10 @@
                        [:show-bottom-sheet
                         {:content (fn [] [drawers/reactions
                                           {:chat-id    chat-id
-                                           :message-id message-id}])}]))}]])]))
+                                           
+                                           :message-id message-id}])
+                         :selected-item           (fn []
+                                                                      user-message-content)}]))}]])]))
 
 (defn message-reactions-row
   [message-data user-message-content show-reaction-author-list?]
