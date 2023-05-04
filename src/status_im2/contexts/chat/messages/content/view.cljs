@@ -84,6 +84,7 @@
   (let [show-delivery-state? (reagent/atom false)]
     (fn [{:keys [content-type quoted-message content outgoing outgoing-status] :as message-data}
          context
+         keyboard-shown
          is-message-reaction-view?]
       (let [first-image     (first (:album message-data))
             outgoing-status (if (= content-type constants/content-type-album)
@@ -103,7 +104,7 @@
           :style               {:border-radius 16
                                 :opacity       (if (and outgoing (= outgoing-status :sending)) 0.5 1)}
           :on-press            (fn []
-                                 (if platform/ios?
+                                 (if (and platform/ios? @keyboard-shown)
                                    (rn/dismiss-keyboard!)
                                    (when (and outgoing
                                               (not= outgoing-status :sending)
@@ -152,7 +153,8 @@
 
 (defn message-with-reactions
   [{:keys [pinned-by mentioned in-pinned-view? content-type last-in-group?] :as message-data}
-   context]
+   context
+   keyboard-shown]
   (let [show-reaction-authors-sheet? (reagent/atom false)]
     [rn/view
      {:style               (style/message-container in-pinned-view? pinned-by mentioned last-in-group?)
@@ -164,6 +166,6 @@
             constants/content-type-system-pinned-message}
           content-type)
        [system-message-content message-data]
-       [user-message-content message-data context false])
-     [reactions/message-reactions-row message-data [user-message-content message-data context true]
+       [user-message-content message-data context keyboard-shown false])
+     [reactions/message-reactions-row message-data [user-message-content message-data context keyboard-shown true]
       show-reaction-authors-sheet?]]))
