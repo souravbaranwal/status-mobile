@@ -126,7 +126,7 @@
               [rn/view])
             [{:style (cond-> {:margin-left 8
                               :flex        1}
-                       is-message-reaction-view? (assoc :max-height (* 0.5 height)))}
+                       is-message-reaction-view? (assoc :max-height (* 0.4 height)))}
              [author message-data is-message-reaction-view?]
              (case content-type
 
