@@ -167,5 +167,6 @@
           content-type)
        [system-message-content message-data]
        [user-message-content message-data context keyboard-shown false])
-     [reactions/message-reactions-row message-data [user-message-content message-data context keyboard-shown true]
+     [reactions/message-reactions-row message-data
+      [user-message-content message-data context keyboard-shown true]
       show-reaction-authors-sheet?]]))
