@@ -13,7 +13,7 @@
      {:on-press            on-press
       :accessibility-label :emoji-reaction-add
       :style               (style/add-reaction)}
-     [icons/icon :i/add
+     [icons/icon :i/add-reaction
       {:size  20
        :color (if dark?
                 colors/white
