@@ -26,8 +26,8 @@
 (defn message-reactions-row-comp
   [{:keys [message-id chat-id]} user-message-content show-reaction-authors-sheet?]
   (let [reactions                                 (rf/sub [:chats/message-reactions message-id chat-id])
-        [reaction-authors-list
-         reaction-authors-list-selected-reaction] (rf/sub [:message/reaction-authors-list])
+        {:keys [reaction-authors-list
+                selected-reaction]} (rf/sub [:chat/reactions-authors])
         _show-sheet                               (when (and reaction-authors-list
                                                              @show-reaction-authors-sheet?)
                                                     (rf/dispatch [:dismiss-keyboard])
@@ -41,7 +41,7 @@
                                                        :content
                                                        (fn [] [drawers/reaction-authors
                                                                reaction-authors-list
-                                                               reaction-authors-list-selected-reaction])
+                                                               selected-reaction])
                                                        :selected-item (fn []
                                                                         user-message-content)
                                                        :padding-bottom-override 0}]))]
@@ -53,7 +53,7 @@
                  :flex-direction :row}}
         (for [{:keys [own emoji-id quantity emoji-reaction-id]
                :as   emoji-reaction} reactions]
-          ^{:key (str emoji-reaction)}
+          ^{:key emoji-reaction}
           [rn/view {:style {:margin-right 6}}
            [quo/reaction
             {:emoji               (get constants/reactions emoji-id)

@@ -199,19 +199,12 @@
                                      (rf/dispatch [:hide-bottom-sheet])
                                      (when on-press (on-press)))}]))]])))
 
-(defn get-reaction-authors-accessibility-id
-  [reaction-type]
-  (-> reaction-type
-      constants/reactions
-      name
-      (str "-reaction-count")))
-
 (defn contact-list-item-fn
   [{:keys [from compressed-key]}]
   (let [[primary-name secondary-name] (rf/sub [:contacts/contact-two-names-by-identity
                                                from])
         {:keys [ens-verified added?]} (rf/sub [:contacts/contact-by-address from])]
-    ^{:key (str compressed-key)}
+    ^{:key compressed-key}
     [contact-list-item/contact-list-item
      {:on-press #(rf/dispatch [:chat.ui/show-profile from])}
      {:primary-name   primary-name
@@ -253,8 +246,8 @@
     {:style {:height 320
              :flex   1}}
     (doall
-     (map contact-list-item-fn
-          (get reaction-authors @selected-tab)))]])
+     (for [contact (get reaction-authors @selected-tab)]
+       (contact-list-item-fn contact)))]])
 
 (defn reaction-authors
   [reaction-authors selected-reaction]
