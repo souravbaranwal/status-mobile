@@ -17,18 +17,17 @@
                    :emoji-id   emoji-id}])))
 
 (defn- on-long-press
-  [chat-id message-id emoji-id show-reaction-authors-sheet?]
+  [message-id emoji-id show-reaction-authors-sheet?]
   (reset! show-reaction-authors-sheet? true)
   (rf/dispatch [:chat.ui/emoji-reactions-by-message-id
                 {:message-id         message-id
-                 :chat-id            chat-id
                  :long-pressed-emoji emoji-id}]))
 
 (defn message-reactions-row-comp
   [{:keys [message-id chat-id]} user-message-content show-reaction-authors-sheet?]
   (let [reactions                                 (rf/sub [:chats/message-reactions message-id chat-id])
         [reaction-authors-list
-         reaction-authors-list-selected-reaction] (rf/sub [:message/reaction-authors-list chat-id])
+         reaction-authors-list-selected-reaction] (rf/sub [:message/reaction-authors-list])
         _show-sheet                               (when (and reaction-authors-list
                                                              @show-reaction-authors-sheet?)
                                                     (rf/dispatch [:dismiss-keyboard])
@@ -61,8 +60,7 @@
              :neutral?            own
              :clicks              quantity
              :on-press            #(on-press own message-id emoji-id emoji-reaction-id)
-             :on-long-press       #(on-long-press chat-id
-                                                  message-id
+             :on-long-press       #(on-long-press message-id
                                                   emoji-id
                                                   show-reaction-authors-sheet?)
              :accessibility-label (str "emoji-reaction-" emoji-id)}]])

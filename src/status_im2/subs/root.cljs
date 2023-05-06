@@ -285,3 +285,5 @@
 
 ; Messages home view -> tabs
 (reg-root-key-sub :messages-home/selected-tab :messages-home/selected-tab)
+
+(reg-root-key-sub :chat/reactions-authors :chat/reactions-authors)

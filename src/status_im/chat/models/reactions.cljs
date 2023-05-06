@@ -109,12 +109,12 @@
    reactions))
 
 (defn- <-rpc
-  [emoji-reaction]
-  (-> emoji-reaction
-      (set/rename-keys
-       {:emojiId       :emoji-id
-        :compressedKey :compressed-key})
-      (select-keys [:emoji-id :from :compressed-key])))
+  [{compressed-key :compressedKey
+    emoji-id       :emojiId
+    :keys          [from]}]
+  {:compressed-key compressed-key
+   :emoji-id       emoji-id
+   :from           from})
 
 (defn- format-response
   [response]
@@ -126,21 +126,21 @@
 (rf/defn save-emoji-reaction-details
   {:events [:chat/save-emoji-reaction-details]}
   [{:keys [db]} message-reactions long-pressed-emoji]
-  {:db (-> db
-           (assoc-in [:chats (:current-chat-id db) :message/reaction-authors-list] message-reactions)
-           (assoc-in [:chats (:current-chat-id db) :message/reaction-authors-list-selected-reaction]
-                     long-pressed-emoji))})
+  {:db (assoc db
+              :chat/reactions-authors
+              {:reaction-authors-list message-reactions
+               :selected-reaction     long-pressed-emoji})})
 
 (rf/defn clear-emoji-reaction-details
   {:events [:chat/clear-emoji-reaction-author-details]}
   [{:keys [db]} message-reactions]
-  {:db (update-in db [:chats (:current-chat-id db)] dissoc :message/reaction-authors-list)})
+  {:db (update db dissoc :chat/reactions-authors)})
 
 (rf/defn emoji-reactions-by-message-id
   {:events [:chat.ui/emoji-reactions-by-message-id]}
-  [{:keys [db]} {:keys [message-id chat-id long-pressed-emoji]}]
+  [{:keys [db]} {:keys [message-id long-pressed-emoji]}]
   {:json-rpc/call [{:method      "wakuext_emojiReactionsByChatIDMessageID"
-                    :params      [chat-id message-id]
+                    :params      [(:current-chat-id db) message-id]
                     :js-response true
                     :on-error    #(log/error "failed to fetch emoji reaction by message-id: "
                                              {:message-id message-id :error %})
