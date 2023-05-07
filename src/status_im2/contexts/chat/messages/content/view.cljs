@@ -138,8 +138,8 @@
                constants/content-type-sticker
                [not-implemented/not-implemented [old-message/sticker message-data]]
 
-              constants/content-type-audio
-              [audio/audio-message message-data context]
+               constants/content-type-audio
+               [audio/audio-message message-data context]
 
                constants/content-type-image
                [image/image-message 0 message-data context on-long-press]
