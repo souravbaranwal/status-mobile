@@ -25,26 +25,26 @@
 
 (defn message-reactions-row-comp
   [{:keys [message-id chat-id]} user-message-content show-reaction-authors-sheet?]
-  (let [reactions                                 (rf/sub [:chats/message-reactions message-id chat-id])
+  (let [reactions                   (rf/sub [:chats/message-reactions message-id chat-id])
         {:keys [reaction-authors-list
                 selected-reaction]} (rf/sub [:chat/reactions-authors])
-        _show-sheet                               (when (and reaction-authors-list
-                                                             @show-reaction-authors-sheet?)
-                                                    (rf/dispatch [:dismiss-keyboard])
-                                                    (rf/dispatch
-                                                     [:show-bottom-sheet
-                                                      {:on-close
-                                                       (fn []
-                                                         (reset! show-reaction-authors-sheet? false)
-                                                         (rf/dispatch
-                                                          [:chat/clear-emoji-reaction-author-details]))
-                                                       :content
-                                                       (fn [] [drawers/reaction-authors
-                                                               reaction-authors-list
-                                                               selected-reaction])
-                                                       :selected-item (fn []
-                                                                        user-message-content)
-                                                       :padding-bottom-override 0}]))]
+        _show-sheet                 (when (and reaction-authors-list
+                                               @show-reaction-authors-sheet?)
+                                      (rf/dispatch [:dismiss-keyboard])
+                                      (rf/dispatch
+                                       [:show-bottom-sheet
+                                        {:on-close
+                                         (fn []
+                                           (reset! show-reaction-authors-sheet? false)
+                                           (rf/dispatch
+                                            [:chat/clear-emoji-reaction-author-details]))
+                                         :content
+                                         (fn [] [drawers/reaction-authors
+                                                 reaction-authors-list
+                                                 selected-reaction])
+                                         :selected-item (fn []
+                                                          user-message-content)
+                                         :padding-bottom-override 0}]))]
     [:<>
      (when (seq reactions)
        [rn/view

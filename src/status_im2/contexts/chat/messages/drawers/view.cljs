@@ -216,21 +216,20 @@
 
 (defn get-tabs-data
   [reaction-authors selected-tab]
-  (mapv (fn [[reaction-type author-details]]
-          ^{:key (str reaction-type)}
-          {:id    reaction-type
-           :label [rn/view {:style style/tab}
-                   [quo/icon
-                    (get constants/reactions reaction-type)
-                    {:no-color        true
-                     :container-style style/tab-icon}]
-                   [quo/text
-                    {:weight :medium
-                     :size   :paragraph-1
-                     :style  (style/tab-count (= @selected-tab
-                                                 reaction-type))}
-                    (count author-details)]]})
-        reaction-authors))
+  (map (fn [[reaction-type author-details]]
+         {:id    reaction-type
+          :label [rn/view {:style style/tab}
+                  [quo/icon
+                   (get constants/reactions reaction-type)
+                   {:no-color        true
+                    :container-style style/tab-icon}]
+                  [quo/text
+                   {:weight :medium
+                    :size   :paragraph-1
+                    :style  (style/tab-count (= @selected-tab
+                                                reaction-type))}
+                   (count author-details)]]})
+       reaction-authors))
 
 (defn reaction-authors-comp
   [selected-tab reaction-authors]

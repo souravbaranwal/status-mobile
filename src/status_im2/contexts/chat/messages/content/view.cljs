@@ -28,12 +28,12 @@
 (def delivery-state-showing-time-ms 3000)
 
 (defn avatar-container
-  [{:keys [content last-in-group? pinned-by quoted-message from]} is-message-reaction-view?]
+  [{:keys [content last-in-group? pinned-by quoted-message from]} message-reaction-view?]
   (if (or (and (seq (:response-to content))
                quoted-message)
           last-in-group?
           pinned-by
-          is-message-reaction-view?)
+          message-reaction-view?)
     [avatar/avatar from :small]
     [rn/view {:padding-top 2 :width 32}]))
 
@@ -45,8 +45,8 @@
            quoted-message
            from
            timestamp]}
-   is-message-reaction-view?]
-  (when (or (and (seq response-to) quoted-message) last-in-group? pinned-by is-message-reaction-view?)
+   message-reaction-view?]
+  (when (or (and (seq response-to) quoted-message) last-in-group? pinned-by message-reaction-view?)
     (let [[primary-name secondary-name] (rf/sub [:contacts/contact-two-names-by-identity from])
           {:keys [ens-verified added?]} (rf/sub [:contacts/contact-by-address from])]
       [quo/author
@@ -85,7 +85,7 @@
     (fn [{:keys [content-type quoted-message content outgoing outgoing-status] :as message-data}
          context
          keyboard-shown
-         is-message-reaction-view?]
+         message-reaction-view?]
       (let [first-image     (first (:album message-data))
             outgoing-status (if (= content-type constants/content-type-album)
                               (:outgoing-status first-image)
@@ -119,15 +119,15 @@
           [rn/view
            {:style {:padding-horizontal 12
                     :flex-direction     :row}}
-           [avatar-container message-data is-message-reaction-view?]
+           [avatar-container message-data message-reaction-view?]
            (into
-            (if is-message-reaction-view?
+            (if message-reaction-view?
               [gesture-handler/scroll-view]
               [rn/view])
-            [{:style (cond-> {:margin-left 8
-                              :flex        1}
-                       is-message-reaction-view? (assoc :max-height (* 0.4 height)))}
-             [author message-data is-message-reaction-view?]
+            [{:style {:margin-left 8
+                      :flex        1
+                      :max-height  (when message-reaction-view? (* 0.4 height))}}
+             [author message-data message-reaction-view?]
              (case content-type
 
                constants/content-type-text [content.text/text-content message-data context]
