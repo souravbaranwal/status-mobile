@@ -5,7 +5,6 @@
             [status-im.transport.message.protocol :as message.protocol]
             [utils.re-frame :as rf]
             [taoensso.timbre :as log]
-            [clojure.set :as set]
             [utils.transforms :as transforms]))
 
 (defn update-reaction
