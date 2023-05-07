@@ -76,23 +76,23 @@
                  :background-color colors/neutral-100-opa-70})}]]
      ;; sheet
      (cond->>
-      [reanimated/view
-       {:style (reanimated/apply-animations-to-style
-                {:transform [{:translateY translate-y}]}
-                (styles/sheet insets window-height override-theme padding-bottom-override shell?))}
+       [reanimated/view
+        {:style (reanimated/apply-animations-to-style
+                 {:transform [{:translateY translate-y}]}
+                 (styles/sheet insets window-height override-theme padding-bottom-override shell?))}
 
         (when shell?
           [blur/view
            {:style styles/shell-bg}])
 
-       (when selected-item
-         [rn/view
-          [rn/view {:style (styles/selected-item override-theme)}
-           [selected-item]]])
+        (when selected-item
+          [rn/view
+           [rn/view {:style (styles/selected-item override-theme)}
+            [selected-item]]])
 
-       ;; handle
-       [rn/view {:style (styles/handle override-theme)}]
-       ;; content
-       [content]]
+        ;; handle
+        [rn/view {:style (styles/handle override-theme)}]
+        ;; content
+        [content]]
        enable-scroll?
        (conj [gesture/gesture-detector {:gesture sheet-gesture}]))]))
