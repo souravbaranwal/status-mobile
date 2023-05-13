@@ -1,6 +1,5 @@
 (ns status-im2.contexts.chat.composer.mentions.view
   (:require
-    [react-native.hooks :as hooks]
     [react-native.platform :as platform]
     [react-native.safe-area :as safe-area]
     [reagent.core :as reagent]
@@ -31,17 +30,17 @@
    user])
 
 (defn- f-view
-  [suggestions-atom props state animations max-height cursor-pos]
-  (let [{:keys [keyboard-height]} (hooks/use-keyboard)
-        suggestions (rf/sub [:chat/mention-suggestions])
-        opacity (reanimated/use-shared-value (if (seq suggestions) 1 0))
-        size (count suggestions)
-        data {:keyboard-height keyboard-height
-              :insets          (safe-area/get-insets)
-              :curr-height     (reanimated/get-shared-value (:height animations))
-              :window-height   (rf/sub [:dimensions/window-height])
-              :reply           (rf/sub [:chats/reply-message])
-              :edit            (rf/sub [:chats/edit-message])}
+  [suggestions-atom props state animations max-height cursor-pos images reply edit]
+  (let [suggestions  (rf/sub [:chat/mention-suggestions])
+        opacity      (reanimated/use-shared-value (if (seq suggestions) 1 0))
+        size         (count suggestions)
+        data         {:keyboard-height @(:kb-height state)
+                      :insets          (safe-area/get-insets)
+                      :curr-height     (reanimated/get-shared-value (:height animations))
+                      :window-height   (:height (rn/get-window))
+                      :images          images
+                      :reply           reply
+                      :edit            edit}
         mentions-pos (utils/calc-suggestions-position cursor-pos max-height size state data)]
     (rn/use-effect
      (fn []
@@ -62,6 +61,6 @@
        :accessibility-label          :mentions-list}]]))
 
 (defn view
-  [props state animations max-height cursor-pos]
+  [props state animations max-height cursor-pos images reply edit]
   (let [suggestions-atom (reagent/atom {})]
-    [:f> f-view suggestions-atom props state animations max-height cursor-pos]))
+    [:f> f-view suggestions-atom props state animations max-height cursor-pos images reply edit]))

@@ -7,7 +7,6 @@
     [react-native.reanimated :as reanimated]
     [reagent.core :as reagent]
     [utils.i18n :as i18n]
-    [utils.re-frame :as rf]
     [status-im2.contexts.chat.composer.style :as style]
     [status-im2.contexts.chat.composer.images.view :as images]
     [status-im2.contexts.chat.composer.reply.view :as reply]
@@ -16,7 +15,6 @@
     [status-im2.contexts.chat.composer.utils :as utils]
     [status-im2.contexts.chat.composer.constants :as constants]
     [status-im2.contexts.chat.composer.actions.view :as actions]
-    [status-im2.contexts.chat.composer.keyboard :as kb]
     [status-im2.contexts.chat.composer.sub-view :as sub-view]
     [status-im2.contexts.chat.composer.effects :as effects]
     [status-im2.contexts.chat.composer.gesture :as drag-gesture]
@@ -26,60 +24,46 @@
 
 (defn sheet-component
   [{:keys [insets window-height blur-height opacity background-y]} props state]
-  (let [images                                   (rf/sub [:chats/sending-image])
-        audio                                    (rf/sub [:chats/sending-audio])
-        reply                                    (rf/sub [:chats/reply-message])
-        edit                                     (rf/sub [:chats/edit-message])
-        input-with-mentions                      (rf/sub [:chat/input-with-mentions])
-        {:keys [input-text input-content-height]
-         :as   chat-input}                       (rf/sub [:chats/current-chat-input])
-        content-height                           (reagent/atom (or input-content-height
-                                                                   constants/input-height))
-        {:keys [keyboard-shown keyboard-height]} (hooks/use-keyboard)
-        kb-height                                (kb/get-kb-height keyboard-height
-                                                                   @(:kb-default-height state))
-        max-height                               (utils/calc-max-height window-height
-                                                                        kb-height
-                                                                        insets
-                                                                        (boolean (seq images))
-                                                                        reply
-                                                                        edit)
-        lines                                    (utils/calc-lines @content-height)
-        max-lines                                (utils/calc-lines max-height)
-        animations                               (utils/init-animations
-                                                  lines
-                                                  input-text
-                                                  images
-                                                  reply
-                                                  audio
-                                                  content-height
-                                                  max-height
-                                                  opacity
-                                                  background-y)
-        dimensions                               {:content-height content-height
-                                                  :max-height     max-height
-                                                  :window-height  window-height
-                                                  :lines          lines
-                                                  :max-lines      max-lines}
-        show-bottom-gradient?                    (utils/show-bottom-gradient? state dimensions)
-        cursor-pos                               (utils/cursor-y-position-relative-to-container props
-                                                                                                state)]
+  (let [subs                     (utils/init-subs)
+        content-height           (reagent/atom (or (:input-content-height subs)
+                                                   constants/input-height))
+        {:keys [keyboard-shown]} (hooks/use-keyboard)
+        max-height               (utils/calc-max-height subs
+                                                        window-height
+                                                        @(:kb-height state)
+                                                        insets)
+        lines                    (utils/calc-lines (- @content-height
+                                                      constants/extra-content-offset))
+        max-lines                (utils/calc-lines max-height)
+        animations               (utils/init-animations
+                                  subs
+                                  lines
+                                  content-height
+                                  max-height
+                                  opacity
+                                  background-y)
+        dimensions               {:content-height content-height
+                                  :max-height     max-height
+                                  :window-height  window-height
+                                  :lines          lines
+                                  :max-lines      max-lines}
+        show-bottom-gradient?    (utils/show-bottom-gradient? state dimensions)
+        cursor-pos               (utils/cursor-y-position-relative-to-container props
+                                                                                state)]
     (effects/did-mount props)
     (effects/initialize props
                         state
                         animations
                         dimensions
-                        chat-input
-                        keyboard-height
-                        (boolean (seq images))
-                        reply
-                        audio)
-    (effects/edit props state edit)
-    (effects/reply props animations reply)
-    (effects/update-input-mention props state input-text)
-    (effects/edit-mentions props state input-with-mentions)
+                        subs)
+    (effects/edit props state subs)
+    (effects/reply props animations subs)
+    (effects/update-input-mention props state subs)
+    (effects/edit-mentions props state subs)
     [:<>
-     [mentions/view props state animations max-height cursor-pos]
+     [sub-view/shell-button state animations subs]
+     [mentions/view props state animations max-height cursor-pos (:images subs) (:reply subs)
+      (:edit subs)]
      [gesture/gesture-detector
       {:gesture (drag-gesture/drag-gesture props state animations dimensions keyboard-shown)}
       [reanimated/view
@@ -96,17 +80,17 @@
         [rn/selectable-text-input
          {:ref        #(reset! (:selectable-input-ref props) %)
           :menu-items @(:menu-items state)
-          :style      (style/input-view props state)}
+          :style      (style/input-view state)}
          [rn/text-input
           {:ref                      #(reset! (:input-ref props) %)
            :default-value            @(:text-value state)
            :on-focus                 #(handler/focus props state animations dimensions)
-           :on-blur                  #(handler/blur state animations dimensions images reply)
+           :on-blur                  #(handler/blur state animations dimensions subs)
            :on-content-size-change   #(handler/content-size-change %
                                                                    state
                                                                    animations
                                                                    dimensions
-                                                                   (or keyboard-shown edit))
+                                                                   (or keyboard-shown (:edit subs)))
            :on-scroll                #(handler/scroll % props state animations dimensions)
            :on-change-text           #(handler/change-text % props state)
            :on-selection-change      #(handler/selection-change % props state)
@@ -116,17 +100,16 @@
            :multiline                true
            :placeholder              (i18n/label :t/type-something)
            :placeholder-text-color   (colors/theme-colors colors/neutral-40 colors/neutral-50)
-           :style                    (style/input-text)
+           :style                    (style/input-text props state)
            :max-length               constants/max-text-size
            :accessibility-label      :chat-message-input}]]
         [gradients/view props state animations show-bottom-gradient?]]
        [images/images-list]
-       [actions/view props state animations window-height insets edit
-        (boolean (seq images))]]]]))
+       [actions/view props state animations window-height insets subs]]]]))
 
 (defn composer
   [insets]
-  (let [window-height (rf/sub [:dimensions/window-height])
+  (let [window-height (:height (rn/get-window))
         opacity       (reanimated/use-shared-value 0)
         background-y  (reanimated/use-shared-value (- window-height))
         blur-height   (reanimated/use-shared-value (+ constants/composer-default-height
