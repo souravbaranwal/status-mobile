@@ -41,7 +41,8 @@
                                          :content
                                          (fn [] [drawers/reaction-authors
                                                  reaction-authors-list
-                                                 selected-reaction])
+                                                 selected-reaction
+                                                 (map :emoji-id reactions)])
                                          :selected-item (fn []
                                                           user-message-content)
                                          :padding-bottom-override 0}]))]
@@ -71,7 +72,6 @@
                        [:show-bottom-sheet
                         {:content       (fn [] [drawers/reactions
                                                 {:chat-id    chat-id
-
                                                  :message-id message-id}])
                          :selected-item (fn []
                                           user-message-content)}]))}]])]))

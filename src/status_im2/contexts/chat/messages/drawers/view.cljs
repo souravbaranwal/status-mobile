@@ -215,24 +215,26 @@
       :added?         added?}]))
 
 (defn get-tabs-data
-  [reaction-authors selected-tab]
-  (map (fn [[reaction-type author-details]]
-         {:id    reaction-type
-          :label [rn/view {:style style/tab}
-                  [quo/icon
-                   (get constants/reactions reaction-type)
-                   {:no-color        true
-                    :container-style style/tab-icon}]
-                  [quo/text
-                   {:weight :medium
-                    :size   :paragraph-1
-                    :style  (style/tab-count (= @selected-tab
-                                                reaction-type))}
-                   (count author-details)]]})
-       reaction-authors))
+  [reaction-authors selected-tab reactions-order]
+  (map (fn [reaction-type-int]
+         (let [author-details (get reaction-authors reaction-type-int)]
+           {:id                  reaction-type-int
+            :accessibility-label (keyword (str "authors-for-reaction-" reaction-type-int))
+            :label               [rn/view {:style style/tab}
+                                  [quo/icon
+                                   (get constants/reactions reaction-type-int)
+                                   {:no-color        true
+                                    :container-style style/tab-icon}]
+                                  [quo/text
+                                   {:weight :medium
+                                    :size   :paragraph-1
+                                    :style  (style/tab-count (= @selected-tab
+                                                                reaction-type-int))}
+                                   (count author-details)]]}))
+       reactions-order))
 
 (defn reaction-authors-comp
-  [selected-tab reaction-authors]
+  [selected-tab reaction-authors reactions-order]
   [:<>
    [rn/view style/tabs-container
     [quo/tabs
@@ -240,7 +242,7 @@
       :scrollable?    true
       :on-change      #(reset! selected-tab %)
       :default-active @selected-tab
-      :data           (get-tabs-data reaction-authors selected-tab)}]]
+      :data           (get-tabs-data reaction-authors selected-tab reactions-order)}]]
    [gesture-handler/scroll-view
     {:style {:height 320
              :flex   1}}
@@ -249,7 +251,7 @@
        (contact-list-item-fn contact)))]])
 
 (defn reaction-authors
-  [reaction-authors selected-reaction]
+  [reaction-authors selected-reaction reactions-order]
   (let [selected-tab (reagent/atom (or selected-reaction (first (keys reaction-authors))))]
     (fn []
-      [:f> reaction-authors-comp selected-tab reaction-authors])))
+      [:f> reaction-authors-comp selected-tab reaction-authors reactions-order])))

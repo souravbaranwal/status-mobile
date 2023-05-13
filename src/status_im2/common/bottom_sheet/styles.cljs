@@ -20,8 +20,8 @@
    :left                    0
    :right                   0
    :border-top-left-radius  20
+   :overflow                (when shell? :hidden)
    :border-top-right-radius 20
-   :overflow                :hidden
    :flex                    1
    :padding-bottom          (or padding-bottom-override (max 20 bottom))
    :background-color        (if shell?
