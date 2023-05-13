@@ -119,8 +119,7 @@
   [response]
   (->> (transforms/js->clj response)
        (map <-rpc)
-       (group-by :emoji-id)
-       (into (sorted-map))))
+       (group-by :emoji-id)))
 
 (rf/defn save-emoji-reaction-details
   {:events [:chat/save-emoji-reaction-details]}
