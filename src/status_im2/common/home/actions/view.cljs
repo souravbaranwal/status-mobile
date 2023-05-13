@@ -128,6 +128,7 @@
                                     :mute-chat))
             :sub-label           (when (and muted? (some? muted-till))
                                    (str (i18n/label :t/muted-until)
+                                        " "
                                         (datetime/format-mute-till muted-till)))
             :on-press            (if muted?
                                    #(unmute-chat-action chat-id)
@@ -240,7 +241,7 @@
           :label               (i18n/label :t/notifications)
           :on-press            #(js/alert "TODO: to be implemented, requires design input")
           :danger?             false
-          :sub-label           (i18n/label :t/all-messages) ; TODO: placeholder
+          :sub-label           (i18n/label :t/all-messages)
           :accessibility-label :manage-notifications
           :chevron?            true
           :add-divider?        add-divider?}))
