@@ -16,10 +16,11 @@
             [quo2.components.record-audio.record-audio.buttons.delete-button :as delete-button]
             [quo2.components.record-audio.record-audio.buttons.record-button :as record-button]
             [clojure.string :as string]
-            [utils.datetime :as datetime]))
+            [utils.datetime :as datetime]
+            [react-native.platform :as platform]))
 
 (def ^:private min-audio-duration-ms 1000)
-(def ^:private max-audio-duration-ms 120500)
+(def ^:private max-audio-duration-ms (if platform/ios? 120800 120500))
 (def ^:private metering-interval 25)
 (def ^:private base-filename "am")
 (def ^:private default-format ".aac")
