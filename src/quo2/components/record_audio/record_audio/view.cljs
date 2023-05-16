@@ -15,12 +15,11 @@
             [quo2.components.record-audio.record-audio.buttons.lock-button :as lock-button]
             [quo2.components.record-audio.record-audio.buttons.delete-button :as delete-button]
             [quo2.components.record-audio.record-audio.buttons.record-button :as record-button]
-            [react-native.platform :as platform]
             [clojure.string :as string]
             [utils.datetime :as datetime]))
 
 (def ^:private min-audio-duration-ms 1000)
-(def ^:private max-audio-duration-ms (if platform/ios? 120000 120500))
+(def ^:private max-audio-duration-ms 120500)
 (def ^:private metering-interval 25)
 (def ^:private base-filename "am")
 (def ^:private default-format ".aac")
@@ -110,7 +109,7 @@
       time-str]]))
 
 (defn- f-play-button
-  [playing-audio? player-ref playing-timer audio-current-time-ms seeking-audio?]
+  [playing-audio? player-ref playing-timer audio-current-time-ms seeking-audio? max-duration-ms]
   (let [on-play  (fn []
                    (reset! playing-audio? true)
                    (reset! playing-timer
@@ -119,8 +118,22 @@
                         (let [current-time (audio/get-player-current-time @player-ref)
                               player-state (audio/get-state @player-ref)
                               playing?     (= player-state audio/PLAYING)]
-                          (when (and playing? (not @seeking-audio?) (> current-time 0))
-                            (reset! audio-current-time-ms current-time))))
+                          (when (and playing?
+                                     (not @seeking-audio?)
+                                     (> current-time 0)
+                                     (< current-time max-duration-ms))
+                            (reset! audio-current-time-ms current-time))
+                          (when (>= current-time max-duration-ms)
+                            (audio/stop-playing
+                             @player-ref
+                             (fn []
+                               (reset! playing-audio? false)
+                               (when @playing-timer
+                                 (js/clearInterval @playing-timer)
+                                 (reset! playing-timer nil)
+                                 (reset! audio-current-time-ms 0)
+                                 (reset! seeking-audio? false)))
+                             #(log/error "[record-audio] stop player - error: " %)))))
                       100)))
         on-pause (fn []
                    (reset! playing-audio? false)
@@ -145,7 +158,7 @@
   [{:keys [on-init on-start-recording on-send on-cancel on-reviewing-audio
            record-audio-permission-granted
            on-request-record-audio-permission on-check-audio-permissions
-           audio-file]}]
+           audio-file max-duration-ms]}]
   [:f>
    ;; TODO we need to refactor this, and use :f> with defined function, currenly state is reseted each
    ;; time parent component
@@ -215,13 +228,7 @@
              (when @recording-start-ms
                (let [now-ms             (datetime/timestamp)
                      recording-duration (- now-ms
-                                           @recording-start-ms)
-                     player             (audio/new-player
-                                         (audio/get-recorder-file-path @recorder-ref)
-                                         {:autoDestroy                 false}
-                                         #())]
-                 (println "dsadass" player (audio/get-recorder-file-path @recorder-ref))
-                 (audio/prepare-player player #(println (audio/get-player-duration player) "DURATION") #(println "error " %))
+                                           @recording-start-ms)]
                  (reset! recording-length-ms recording-duration)
                  (when (>= recording-duration max-audio-duration-ms)
                    (reset! reached-max-duration? (not @locked?))
@@ -425,7 +432,8 @@
                      (reset! force-show-controls? false)
                      (when on-send
                        (on-send {:file-path @output-file
-                                 :duration  (int (audio/get-player-duration @player-ref))}))
+                                 :duration  (min max-audio-duration-ms
+                                                 (int (audio/get-player-duration @player-ref)))}))
                      (when @player-ref
                        (audio/stop-playing
                         @player-ref
@@ -531,11 +539,12 @@
           (when @reviewing-audio?
             [:<>
              [:f> f-play-button playing-audio? player-ref playing-timer audio-current-time-ms
-              seeking-audio?]
+              seeking-audio? max-duration-ms]
              [:f> soundtrack/f-soundtrack
               {:audio-current-time-ms audio-current-time-ms
                :player-ref            @player-ref
-               :seeking-audio?        seeking-audio?}]])
+               :seeking-audio?        seeking-audio?
+               :max-audio-duration-ms max-duration-ms}]])
           (when (or @recording? @reviewing-audio?)
             [:f> f-time-counter @recording? @recording-length-ms @ready-to-delete? @reviewing-audio?
              @audio-current-time-ms])

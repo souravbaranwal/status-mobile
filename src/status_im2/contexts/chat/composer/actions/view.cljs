@@ -7,28 +7,29 @@
     [react-native.reanimated :as reanimated]
     [reagent.core :as reagent]
     [status-im2.common.alert.events :as alert]
-    [status-im2.contexts.chat.composer.constants :as constants]
+    [status-im2.contexts.chat.composer.constants :as comp-constants]
     [status-im2.contexts.chat.messages.list.view :as messages.list]
     [utils.i18n :as i18n]
     [utils.re-frame :as rf]
-    [status-im2.contexts.chat.composer.actions.style :as style]))
+    [status-im2.contexts.chat.composer.actions.style :as style]
+    [status-im2.constants :as constants]))
 
 (defn send-message
   [{:keys [text-value focused? maximized?]}
    {:keys [height saved-height last-height opacity background-y container-opacity]}
    window-height]
-  (reanimated/animate height constants/input-height)
-  (reanimated/set-shared-value saved-height constants/input-height)
-  (reanimated/set-shared-value last-height constants/input-height)
+  (reanimated/animate height comp-constants/input-height)
+  (reanimated/set-shared-value saved-height comp-constants/input-height)
+  (reanimated/set-shared-value last-height comp-constants/input-height)
   (reanimated/animate opacity 0)
   (when-not @focused?
-    (js/setTimeout #(reanimated/animate container-opacity constants/empty-opacity) 300))
+    (js/setTimeout #(reanimated/animate container-opacity comp-constants/empty-opacity) 300))
   (js/setTimeout #(reanimated/set-shared-value background-y
                                                (- window-height))
                  300)
   (rf/dispatch [:chat.ui/send-current-message])
   (rf/dispatch [:chat.ui/set-input-maximized false])
-  (rf/dispatch [:chat.ui/set-input-content-height constants/input-height])
+  (rf/dispatch [:chat.ui/set-input-content-height comp-constants/input-height])
   (rf/dispatch [:chat.ui/set-chat-input-text nil])
   (reset! maximized? false)
   (reset! text-value "")
@@ -88,7 +89,7 @@
                                              (rf/dispatch [:chat/send-audio file-path duration])
                                              (if-not @focused?
                                                (reanimated/animate container-opacity
-                                                                   constants/empty-opacity)
+                                                                   comp-constants/empty-opacity)
                                                (js/setTimeout #(when @input-ref (.focus ^js @input-ref))
                                                               300))
                                              (rf/dispatch [:chat.ui/set-input-audio nil]))
@@ -98,7 +99,7 @@
                                                (reset! gesture-enabled? true)
                                                (if-not @focused?
                                                  (reanimated/animate container-opacity
-                                                                     constants/empty-opacity)
+                                                                     comp-constants/empty-opacity)
                                                  (js/setTimeout #(when @input-ref
                                                                    (.focus ^js @input-ref))
                                                                 300))
@@ -121,7 +122,8 @@
                                                      (i18n/label :t/audio-recorder-error)
                                                      (i18n/label
                                                       :t/audio-recorder-permissions-error)))
-                                                  50)}]))}]]))
+                                                  50)}]))
+       :max-duration-ms                    constants/audio-max-duration-ms}]]))
 
 
 (defn camera-button
