@@ -20,8 +20,8 @@
             [utils.datetime :as datetime]))
 
 (def ^:private min-audio-duration-ms 1000)
-(def ^:private max-audio-duration-ms 120500)
-(def ^:private metering-interval 50)
+(def ^:private max-audio-duration-ms (if platform/ios? 120000 120500))
+(def ^:private metering-interval 25)
 (def ^:private base-filename "am")
 (def ^:private default-format ".aac")
 
@@ -215,7 +215,13 @@
              (when @recording-start-ms
                (let [now-ms             (datetime/timestamp)
                      recording-duration (- now-ms
-                                           @recording-start-ms)]
+                                           @recording-start-ms)
+                     player             (audio/new-player
+                                         (audio/get-recorder-file-path @recorder-ref)
+                                         {:autoDestroy                 false}
+                                         #())]
+                 (println "dsadass" player (audio/get-recorder-file-path @recorder-ref))
+                 (audio/prepare-player player #(println (audio/get-player-duration player) "DURATION") #(println "error " %))
                  (reset! recording-length-ms recording-duration)
                  (when (>= recording-duration max-audio-duration-ms)
                    (reset! reached-max-duration? (not @locked?))
