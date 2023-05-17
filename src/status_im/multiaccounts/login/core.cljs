@@ -45,7 +45,8 @@
     [status-im2.common.log :as logging]
     [taoensso.timbre :as log]
     [status-im2.contexts.shell.animation :as shell.animation]
-    [utils.security.core :as security]))
+    [utils.security.core :as security]
+    [status-im.ui.screens.wallet.custom-tokens.views :as custom-tokens]))
 
 (re-frame/reg-fx
  ::initialize-transactions-management-enabled
@@ -294,7 +295,7 @@
 (re-frame/reg-fx
  ;;TODO: this could be replaced by a single API call on status-go side
  ::initialize-wallet
- (fn [[network-id callback]]
+ (fn [[network-id network callback]]
    (-> (js/Promise.all
         (clj->js
          [(js/Promise.
@@ -304,10 +305,29 @@
                              :on-error   reject})))
           (js/Promise.
            (fn [resolve _]
+             (json-rpc/call
+              {:method "wallet_addEthereumChain"
+               :params
+               [{:isTest                 false
+                 :tokenOverrides         []
+                 :rpcUrl                 (get-in network [:config :UpstreamConfig :URL])
+                 :chainColor             "green"
+                 :chainName              (:name network)
+                 :nativeCurrencyDecimals 10
+                 :shortName              "erc20"
+                 :layer                  1
+                 :chainId                (int network-id)
+                 :enabled                false
+                 :fallbackURL            (get-in network [:config :UpstreamConfig :URL])}]
+               :on-success resolve
+               :on-error (fn [_] (resolve nil))})))
+          (js/Promise.
+           (fn [resolve _]
              (json-rpc/call {:method     "wallet_getTokens"
                              :params     [(int network-id)]
                              :on-success resolve
-                             :on-error   #(resolve nil)})))
+                             :on-error   (fn [_]
+                                           (resolve nil))})))
           (js/Promise.
            (fn [resolve reject]
              (json-rpc/call {:method     "wallet_getCustomTokens"
@@ -318,7 +338,7 @@
              (json-rpc/call {:method     "wallet_getSavedAddresses"
                              :on-success resolve
                              :on-error   reject})))]))
-       (.then (fn [[accounts tokens custom-tokens favourites]]
+       (.then (fn [[accounts _ tokens custom-tokens favourites]]
                 (callback accounts
                           (normalize-tokens network-id tokens)
                           (mapv #(update % :symbol keyword) custom-tokens)
@@ -449,6 +469,7 @@
   [{:keys [db] :as cofx}]
   (let [{:networks/keys [current-network networks]} db
         notifications-enabled? (get-in db [:multiaccount :notifications-enabled?])
+        current-network-config (get networks current-network)
         network-id (str (get-in networks
                                 [current-network :config :NetworkId]))
         remote-push-notifications-enabled?
@@ -460,6 +481,7 @@
                         :on-disabled #(log/info "eip1559 is not activated")}
                        ::initialize-wallet
                        [network-id
+                        current-network-config
                         (fn [accounts tokens custom-tokens favourites]
                           (re-frame/dispatch [::initialize-wallet
                                               accounts tokens custom-tokens favourites]))]
