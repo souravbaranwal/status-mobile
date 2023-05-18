@@ -9,8 +9,7 @@
             [utils.re-frame :as rf]
             [reagent.core :as reagent]
             [status-im2.common.contact-list-item.view :as contact-list-item]
-            [status-im2.contexts.chat.messages.drawers.style :as style]
-            [quo.gesture-handler :as gesture-handler]))
+            [status-im2.contexts.chat.messages.drawers.style :as style]))
 
 (defn pin-message
   [{:keys [chat-id pinned pinned-by] :as message-data}]
@@ -243,12 +242,12 @@
       :on-change      #(reset! selected-tab %)
       :default-active @selected-tab
       :data           (get-tabs-data reaction-authors selected-tab reactions-order)}]]
-   [gesture-handler/scroll-view
-    {:style {:height 320
-             :flex   1}}
-    (doall
-     (for [contact (get reaction-authors @selected-tab)]
-       (contact-list-item-fn contact)))]])
+   [rn/gesture-handler-flat-list
+    {:data                    (for [contact (get reaction-authors @selected-tab)]
+                                contact)
+     :render-fn               contact-list-item-fn
+     :key-fn                  :from
+     :style                   style/authors-list}]])
 
 (defn reaction-authors
   [reaction-authors selected-reaction reactions-order]

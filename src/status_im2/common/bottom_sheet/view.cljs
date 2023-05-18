@@ -53,8 +53,7 @@
 
 (defn view
   [{:keys [hide? insets]}
-   {:keys [content override-theme selected-item enable-scroll? padding-bottom-override on-close shell?]
-    :or   {enable-scroll? true}}]
+   {:keys [content override-theme selected-item padding-bottom-override on-close shell?]}]
   (let [{window-height :height} (rn/get-window)
         bg-opacity              (reanimated/use-shared-value 0)
         translate-y             (reanimated/use-shared-value window-height)
@@ -74,24 +73,22 @@
                 {:opacity bg-opacity}
                 {:flex 1 :background-color colors/neutral-100-opa-70})}]]
      ;; sheet
-     (cond->>
-       [reanimated/view
-        {:style (reanimated/apply-animations-to-style
-                 {:transform [{:translateY translate-y}]}
-                 (styles/sheet insets window-height override-theme padding-bottom-override shell?))}
+     [gesture/gesture-detector {:gesture sheet-gesture}
+      [reanimated/view
+       {:style (reanimated/apply-animations-to-style
+                {:transform [{:translateY translate-y}]}
+                (styles/sheet insets window-height override-theme padding-bottom-override shell?))}
 
-        (when shell?
-          [blur/view
-           {:style styles/shell-bg}])
+       (when shell?
+         [blur/view
+          {:style styles/shell-bg}])
 
-        (when selected-item
-          [rn/view
-           [rn/view {:style (styles/selected-item override-theme)}
-            [selected-item]]])
+       (when selected-item
+         [rn/view
+          [rn/view {:style (styles/selected-item override-theme)}
+           [selected-item]]])
 
         ;; handle
-        [rn/view {:style (styles/handle override-theme)}]
+       [rn/view {:style (styles/handle override-theme)}]
         ;; content
-        [content]]
-       enable-scroll?
-       (conj [gesture/gesture-detector {:gesture sheet-gesture}]))]))
+       [content]]]]))
