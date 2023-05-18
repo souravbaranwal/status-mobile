@@ -19,5 +19,6 @@
    :padding-right 8
    :margin-bottom 12})
 
-(def authors-list {:height 320
-                   :flex   1})
+(def authors-list
+  {:height 320
+   :flex   1})

@@ -23,7 +23,8 @@
                 {:message-id         message-id
                  :long-pressed-emoji emoji-id}]))
 
-(defn show-authors-sheet [reaction-authors-list show-reaction-authors-sheet? selected-reaction reactions user-message-content]
+(defn show-authors-sheet
+  [reaction-authors-list show-reaction-authors-sheet? selected-reaction reactions user-message-content]
   (when (and reaction-authors-list
              @show-reaction-authors-sheet?)
     (rf/dispatch [:dismiss-keyboard])
@@ -48,7 +49,11 @@
   (let [reactions                   (rf/sub [:chats/message-reactions message-id chat-id])
         {:keys [reaction-authors-list
                 selected-reaction]} (rf/sub [:chat/reactions-authors])]
-    (show-authors-sheet reaction-authors-list show-reaction-authors-sheet? selected-reaction reactions user-message-content)
+    (show-authors-sheet reaction-authors-list
+                        show-reaction-authors-sheet?
+                        selected-reaction
+                        reactions
+                        user-message-content)
     [:<>
      (when (seq reactions)
        [rn/view

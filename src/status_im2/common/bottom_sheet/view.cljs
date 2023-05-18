@@ -88,7 +88,7 @@
           [rn/view {:style (styles/selected-item override-theme)}
            [selected-item]]])
 
-        ;; handle
+       ;; handle
        [rn/view {:style (styles/handle override-theme)}]
-        ;; content
+       ;; content
        [content]]]]))

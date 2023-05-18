@@ -131,7 +131,8 @@
                style
                size
                blur?
-               override-theme]
+               override-theme
+               in-scroll-view?]
         :or   {fade-end-percentage fade-end-percentage
                fade-end?           false
                scrollable?         false
@@ -142,7 +143,9 @@
         [rn/view {:style {:margin-top (- (dec unread-count-offset))}}
          [masked-view-wrapper
           {:fade-end-percentage (get @fading :fade-end-percentage) :fade-end? fade-end?}
-          [rn/flat-list
+          [(if in-scroll-view?
+             rn/gesture-handler-flat-list
+             rn/flat-list)
            (merge
             (dissoc props
              :default-active

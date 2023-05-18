@@ -237,17 +237,18 @@
   [:<>
    [rn/view style/tabs-container
     [quo/tabs
-     {:size           32
-      :scrollable?    true
-      :on-change      #(reset! selected-tab %)
-      :default-active @selected-tab
-      :data           (get-tabs-data reaction-authors selected-tab reactions-order)}]]
+     {:size            32
+      :scrollable?     true
+      :in-scroll-view? true
+      :on-change       #(reset! selected-tab %)
+      :default-active  @selected-tab
+      :data            (get-tabs-data reaction-authors selected-tab reactions-order)}]]
    [rn/gesture-handler-flat-list
-    {:data                    (for [contact (get reaction-authors @selected-tab)]
-                                contact)
-     :render-fn               contact-list-item-fn
-     :key-fn                  :from
-     :style                   style/authors-list}]])
+    {:data      (for [contact (get reaction-authors @selected-tab)]
+                  contact)
+     :render-fn contact-list-item-fn
+     :key-fn    :from
+     :style     style/authors-list}]])
 
 (defn reaction-authors
   [reaction-authors selected-reaction reactions-order]
