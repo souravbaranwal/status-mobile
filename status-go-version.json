@@ -3,7 +3,7 @@
     "_comment": "Instead use: scripts/update-status-go.sh <rev>",
     "owner": "status-im",
     "repo": "status-go",
-    "version": "v0.151.14",
-    "commit-sha1": "959e3703891286853574f4974e87bd53e079e72d",
-    "src-sha256": "11l9p1psl331b4vaw1694z09z9rlaps5w1cildmdgnx2pnkgcr7q"
+    "version": "remove-padding-around-profile-image-on-qrs",
+    "commit-sha1": "04444cb637e7234241a70d80a9caa2a956d055e0",
+    "src-sha256": "0dizgpny9aahj79c42gsfwhmmj6fy3g875sc9xgxw69kwf1pbwpp"
 }
