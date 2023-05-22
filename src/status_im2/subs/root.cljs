@@ -44,6 +44,7 @@
 (reg-root-key-sub :bottom-sheet :bottom-sheet)
 
 ;;general
+(reg-root-key-sub :syncing :syncing)
 (reg-root-key-sub :sync-state :sync-state)
 (reg-root-key-sub :network-status :network-status)
 (reg-root-key-sub :peers-count :peers-count)
@@ -68,12 +69,12 @@
 (reg-root-key-sub :supported-biometric-auth :supported-biometric-auth)
 (reg-root-key-sub :connectivity/ui-status-properties :connectivity/ui-status-properties)
 (reg-root-key-sub :logged-in-since :logged-in-since)
-(reg-root-key-sub :link-previews-whitelist :link-previews-whitelist)
 (reg-root-key-sub :app-state :app-state)
 (reg-root-key-sub :home-items-show-number :home-items-show-number)
 (reg-root-key-sub :waku/v2-peer-stats :peer-stats)
 (reg-root-key-sub :visibility-status-updates :visibility-status-updates)
 (reg-root-key-sub :shell/switcher-cards :shell/switcher-cards)
+(reg-root-key-sub :password-authentication :password-authentication)
 
 ;;NOTE this one is not related to ethereum network
 ;; it is about cellular network/ wifi network
@@ -193,6 +194,11 @@
 (reg-root-key-sub :wallet/swap-from-token-amount :wallet/swap-from-token-amount)
 (reg-root-key-sub :wallet/swap-to-token-amount :wallet/swap-to-token-amount)
 (reg-root-key-sub :wallet/swap-advanced-mode? :wallet/swap-advanced-mode?)
+
+;;; Link previews
+
+(reg-root-key-sub :link-previews-whitelist :link-previews-whitelist)
+(reg-root-key-sub :chat/link-previews :chat/link-previews)
 
 ;;commands
 (reg-root-key-sub :commands/select-account :commands/select-account)

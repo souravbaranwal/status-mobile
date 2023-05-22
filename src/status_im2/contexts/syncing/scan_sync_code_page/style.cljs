@@ -1,10 +1,10 @@
-(ns status-im2.contexts.onboarding.syncing.syncing-devices.style
+(ns status-im2.contexts.syncing.scan-sync-code-page.style
   (:require [quo2.foundations.colors :as colors]))
 
-(def page-container
+(def background
   {:position         :absolute
    :top              0
    :bottom           0
    :left             0
    :right            0
-   :background-color colors/neutral-80-opa-80-blur})
+   :background-color colors/neutral-95})

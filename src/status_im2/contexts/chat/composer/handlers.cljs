@@ -1,13 +1,14 @@
 (ns status-im2.contexts.chat.composer.handlers
   (:require
+    [oops.core :as oops]
     [react-native.core :as rn]
     [react-native.reanimated :as reanimated]
     [reagent.core :as reagent]
-    [oops.core :as oops]
     [status-im2.contexts.chat.composer.constants :as constants]
     [status-im2.contexts.chat.composer.keyboard :as kb]
-    [status-im2.contexts.chat.composer.utils :as utils]
     [status-im2.contexts.chat.composer.selection :as selection]
+    [status-im2.contexts.chat.composer.utils :as utils]
+    [utils.debounce :as debounce]
     [utils.re-frame :as rf]))
 
 (defn focus
@@ -35,29 +36,30 @@
 
 (defn blur
   [{:keys [text-value focused? lock-selection? cursor-position saved-cursor-position gradient-z-index
-           maximized?]}
+           maximized? recording?]}
    {:keys [height saved-height last-height gradient-opacity container-opacity opacity background-y]}
    {:keys [content-height max-height window-height]}
-   {:keys [images reply]}]
-  (let [lines         (utils/calc-lines (- @content-height constants/extra-content-offset))
-        min-height    (utils/get-min-height lines)
-        reopen-height (utils/calc-reopen-height text-value min-height content-height saved-height)]
-    (reset! focused? false)
-    (rf/dispatch [:chat.ui/set-input-focused false])
-    (reanimated/set-shared-value last-height reopen-height)
-    (reanimated/animate height min-height)
-    (reanimated/set-shared-value saved-height min-height)
-    (reanimated/animate opacity 0)
-    (js/setTimeout #(reanimated/set-shared-value background-y (- window-height)) 300)
-    (when (utils/empty-input? @text-value images reply nil)
-      (reanimated/animate container-opacity constants/empty-opacity))
-    (reanimated/animate gradient-opacity 0)
-    (reset! lock-selection? true)
-    (reset! saved-cursor-position @cursor-position)
-    (reset! gradient-z-index (if (= (reanimated/get-shared-value gradient-opacity) 1) -1 0))
-    (when (not= reopen-height max-height)
-      (reset! maximized? false)
-      (rf/dispatch [:chat.ui/set-input-maximized false]))))
+   {:keys [images link-previews? reply]}]
+  (when-not @recording?
+    (let [lines         (utils/calc-lines (- @content-height constants/extra-content-offset))
+          min-height    (utils/get-min-height lines)
+          reopen-height (utils/calc-reopen-height text-value min-height content-height saved-height)]
+      (reset! focused? false)
+      (rf/dispatch [:chat.ui/set-input-focused false])
+      (reanimated/set-shared-value last-height reopen-height)
+      (reanimated/animate height min-height)
+      (reanimated/set-shared-value saved-height min-height)
+      (reanimated/animate opacity 0)
+      (js/setTimeout #(reanimated/set-shared-value background-y (- window-height)) 300)
+      (when (utils/empty-input? @text-value images link-previews? reply nil)
+        (reanimated/animate container-opacity constants/empty-opacity))
+      (reanimated/animate gradient-opacity 0)
+      (reset! lock-selection? true)
+      (reset! saved-cursor-position @cursor-position)
+      (reset! gradient-z-index (if (= (reanimated/get-shared-value gradient-opacity) 1) -1 0))
+      (when (not= reopen-height max-height)
+        (reset! maximized? false)
+        (rf/dispatch [:chat.ui/set-input-maximized false])))))
 
 (defn content-size-change
   [event
@@ -109,6 +111,9 @@
   [text
    {:keys [input-ref record-reset-fn]}
    {:keys [text-value cursor-position recording?]}]
+  (debounce/debounce-and-dispatch [:link-preview/unfurl-urls text]
+                                  constants/unfurl-debounce-ms)
+
   (reset! text-value text)
   (reagent/next-tick #(when @input-ref
                         (.setNativeProps ^js @input-ref
@@ -118,7 +123,7 @@
     (@record-reset-fn)
     (reset! recording? false))
   (rf/dispatch [:chat.ui/set-chat-input-text text])
-  (rf/dispatch [:mention/on-change-text text]))
+  (debounce/debounce-and-dispatch [:mention/on-change-text text] 300))
 
 (defn selection-change
   [event

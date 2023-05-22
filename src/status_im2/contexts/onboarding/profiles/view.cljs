@@ -10,9 +10,9 @@
             [utils.i18n :as i18n]
             [utils.re-frame :as rf]
             [utils.security.core :as security]
-            [utils.transforms :as types]))
-
-(def show-profiles? (reagent/atom false))
+            [utils.transforms :as types]
+            [quo2.foundations.colors :as colors]
+            [react-native.safe-area :as safe-area]))
 
 (defn login-multiaccount
   []
@@ -43,14 +43,14 @@
     :context             context
     :button-text         (i18n/label :t/remove)
     :close-button-text   (i18n/label :t/cancel)
-    :on-press            #(do
-                            (rf/dispatch [:hide-bottom-sheet])
-                            (native-module/delete-multiaccount
-                             key-uid
-                             (fn [result]
-                               (let [{:keys [error]} (types/json->clj result)]
-                                 (rf/dispatch [:onboarding-2/on-delete-profile-success key-uid])
-                                 (log/info "profile deleted: error" error)))))}])
+    :on-press            (fn []
+                           (rf/dispatch [:hide-bottom-sheet])
+                           (native-module/delete-multiaccount
+                            key-uid
+                            (fn [result]
+                              (let [{:keys [error]} (types/json->clj result)]
+                                (rf/dispatch [:onboarding-2/on-delete-profile-success key-uid])
+                                (log/info "profile deleted: error" error)))))}])
 
 (defn show-confirmation
   [key-uid context]
@@ -72,7 +72,9 @@
                 {:content (fn [] [profile-options key-uid context])}]))
 
 (defn profile-card
-  [{:keys [name key-uid customization-color keycard-pairing last-index] :as multiaccount} index]
+  [{:keys [name key-uid customization-color keycard-pairing last-index set-hide-profiles]
+    :as   multiaccount}
+   index]
   (let [last-item?      (= last-index index)
         profile-picture (:uri (first (:images multiaccount)))]
     [quo/profile-card
@@ -89,15 +91,18 @@
                               {:name            name
                                :color           customization-color
                                :profile-picture profile-picture})
-      :on-card-press        #(do
-                               (rf/dispatch
-                                [:multiaccounts.login.ui/multiaccount-selected key-uid])
-                               (when-not keycard-pairing (reset! show-profiles? false)))}]))
+      :on-card-press        (fn []
+                              (rf/dispatch
+                               [:multiaccounts.login.ui/multiaccount-selected key-uid])
+                              (when-not keycard-pairing (set-hide-profiles)))}]))
 
 (defn profiles-section
-  []
+  [{:keys [set-hide-profiles]}]
   (let [multiaccounts (vals (rf/sub [:multiaccounts/multiaccounts]))
-        multiaccounts (map #(assoc % :last-index (- (count multiaccounts) 1)) multiaccounts)]
+        profiles-data (map #(assoc %
+                                   :last-index        (- (count multiaccounts) 1)
+                                   :set-hide-profiles set-hide-profiles)
+                           multiaccounts)]
     [rn/view
      {:style style/profiles-container}
      [rn/view
@@ -116,7 +121,7 @@
         :override-theme      :dark}
        :main-icons/add]]
      [rn/flat-list
-      {:data                    (sort-by :timestamp > multiaccounts)
+      {:data                    (sort-by :timestamp > profiles-data)
        :key-fn                  :key-uid
        :content-container-style {:padding-bottom 20}
        :render-fn               profile-card}]]))
@@ -169,18 +174,20 @@
        (i18n/label :t/forgot-your-password-info-create-new-password-description)]]]]])
 
 (defn login-section
-  []
-  (let [{:keys [name customization-color error processing]
+  [{:keys [set-show-profiles]}]
+  (let [{:keys [name customization-color error processing password]
          :as   multiaccount} (rf/sub [:multiaccounts/login])
         sign-in-enabled?     (rf/sub [:sign-in-enabled?])
         profile-picture      (:uri (first (:images multiaccount)))]
     [rn/keyboard-avoiding-view
-     {:style style/login-container}
+     {:style                  style/login-container
+      :keyboardVerticalOffset (- (safe-area/get-bottom))}
      [quo/button
       {:size                32
        :type                :blur-bg
        :icon                true
-       :on-press            #(reset! show-profiles? true)
+       :on-press            set-show-profiles
+       :disabled            processing
        :override-theme      :dark
        :width               32
        :accessibility-label :show-profiles
@@ -197,34 +204,37 @@
       [quo/input
        {:type              :password
         :blur?             true
-        :override-theme    :dark
+        :disabled?         processing
         :placeholder       (i18n/label :t/type-your-password)
         :auto-focus        true
-        :error?            (when (not-empty error) error)
+        :error?            (seq error)
         :label             (i18n/label :t/profile-password)
-        :secure-text-entry true
         :on-change-text    (fn [password]
                              (rf/dispatch [:set-in [:multiaccounts/login :password]
                                            (security/mask-data password)])
                              (rf/dispatch [:set-in [:multiaccounts/login :error] ""]))
+        :default-value     (security/safe-unmask-data password)
         :on-submit-editing (when sign-in-enabled? login-multiaccount)}]
-      (when (not-empty error)
-        [quo/info-message
-         {:type  :error
-          :size  :default
-          :icon  :i/info
-          :style style/info-message}
-         error])]
-     [quo/button
-      {:size                40
-       :type                :ghost
-       :before              :i/info
-       :accessibility-label :forget-password-button
-       :override-theme      :dark
-       :style               style/forget-password-button
-       :on-press            #(rf/dispatch [:show-bottom-sheet
-                                           {:content forget-password-doc :shell? true}])}
-      (i18n/label :t/forgot-password)]
+      (when (seq error)
+        [rn/view {:style style/error-message}
+         [quo/info-message
+          {:type :error
+           :size :default
+           :icon :i/info}
+          error]
+         [rn/touchable-opacity
+          {:hit-slop       {:top 6 :bottom 20 :left 0 :right 0}
+           :style          {:margin-left -4}
+           :disabled       processing
+           :active-opacity 1
+           :on-press       #(rf/dispatch [:show-bottom-sheet
+                                          {:content forget-password-doc :shell? true}])}
+          [rn/text
+           {:style                 {:text-decoration-line :underline
+                                    :color                colors/danger-60}
+            :size                  :paragraph-2
+            :suppress-highlighting true}
+           (i18n/label :t/forgot-password)]]])]
      [quo/button
       {:size                40
        :type                :primary
@@ -234,15 +244,17 @@
        :before              :i/unlocked
        :disabled            (or (not sign-in-enabled?) processing)
        :on-press            login-multiaccount
-       :style               (style/login-button)}
+       :style               {:margin-bottom (+ (safe-area/get-bottom) 12)}}
       (i18n/label :t/log-in)]]))
 
 (defn views
   []
-  (reset! show-profiles? false)
-  (fn []
-    [:<>
-     [background/view true]
-     (if @show-profiles?
-       [profiles-section]
-       [login-section])]))
+  (let [show-profiles?    (reagent/atom false)
+        set-show-profiles #(reset! show-profiles? true)
+        set-hide-profiles #(reset! show-profiles? false)]
+    (fn []
+      [:<>
+       [background/view true]
+       (if @show-profiles?
+         [profiles-section {:set-hide-profiles set-hide-profiles}]
+         [login-section {:set-show-profiles set-show-profiles}])])))

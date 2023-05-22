@@ -74,6 +74,7 @@
     [status-im2.contexts.quo-preview.selectors.filter :as filter]
     [status-im2.contexts.quo-preview.selectors.selectors :as selectors]
     [status-im2.contexts.quo-preview.settings.accounts :as accounts]
+    [status-im2.contexts.quo-preview.settings.settings-list :as settings-list]
     [status-im2.contexts.quo-preview.settings.privacy-option :as privacy-option]
     [status-im2.contexts.quo-preview.share.qr-code :as qr-code]
     [status-im2.contexts.quo-preview.share.share-qr-code :as share-qr-code]
@@ -90,7 +91,8 @@
     [status-im2.contexts.quo-preview.wallet.lowest-price :as lowest-price]
     [status-im2.contexts.quo-preview.wallet.network-amount :as network-amount]
     [status-im2.contexts.quo-preview.wallet.network-breakdown :as network-breakdown]
-    [status-im2.contexts.quo-preview.wallet.token-overview :as token-overview]))
+    [status-im2.contexts.quo-preview.wallet.token-overview :as token-overview]
+    [status-im2.contexts.quo-preview.keycard.keycard :as keycard]))
 
 (def screens-categories
   {:foundations           [{:name      :shadows
@@ -148,7 +150,8 @@
                             :options   {:topBar {:visible true}}
                             :component discover-card/preview-discoverd-card}
                            {:name      :token-gating
-                            :options   {:topBar {:visible true}}
+                            :options   {:insets {:bottom? true}
+                                        :topBar {:visible true}}
                             :component token-gating/preview-token-gating}]
    :counter               [{:name      :counter
                             :options   {:topBar {:visible true}}
@@ -299,7 +302,10 @@
                             :component privacy-option/preview-options}
                            {:name      :accounts
                             :options   {:topBar {:visible true}}
-                            :component accounts/preview-accounts}]
+                            :component accounts/preview-accounts}
+                           {:name      :settings-list
+                            :options   {:topBar {:visible true}}
+                            :component settings-list/preview-settings-list}]
    :share                 [{:name      :qr-code
                             :options   {:topBar {:visible true}}
                             :component qr-code/preview-qr-code}
@@ -344,7 +350,10 @@
                             :component network-breakdown/preview-network-breakdown}
                            {:name      :network-amount
                             :options   {:topBar {:visible true}}
-                            :component network-amount/preview}]})
+                            :component network-amount/preview}]
+   :keycard               [{:name      :keycard-component
+                            :options   {:topBar {:visible true}}
+                            :component keycard/preview-keycard}]})
 
 (def screens (flatten (map val screens-categories)))
 

@@ -6,17 +6,19 @@
     [status-im2.common.home.style :as style]
     [status-im2.common.plus-button.view :as plus-button]
     [status-im2.constants :as constants]
-    [utils.re-frame :as rf]))
+    [utils.re-frame :as rf]
+    [utils.debounce :refer [dispatch-and-chill]]))
 
 (defn title-column
-  [{:keys [label handler accessibility-label]}]
+  [{:keys [label handler accessibility-label customization-color]}]
   [rn/view style/title-column
    [rn/view {:flex 1}
     [quo/text style/title-column-text
      label]]
    [plus-button/plus-button
     {:on-press            handler
-     :accessibility-label accessibility-label}]])
+     :accessibility-label accessibility-label
+     :customization-color customization-color}]])
 
 (defn- get-button-common-props
   [type]
@@ -49,14 +51,17 @@
 
 (defn- left-section
   [{:keys [avatar]}]
-  [rn/touchable-without-feedback {:on-press #(rf/dispatch [:navigate-to :my-profile])}
-   [rn/view
-    {:accessibility-label :open-profile
-     :style               style/left-section}
-    [quo/user-avatar
-     (merge {:status-indicator? true
-             :size              :small}
-            avatar)]]])
+  (let [{:keys [public-key]} (rf/sub [:multiaccount])
+        online?              (rf/sub [:visibility-status-updates/online? public-key])]
+    [rn/touchable-without-feedback {:on-press #(rf/dispatch [:navigate-to :my-profile])}
+     [rn/view
+      {:accessibility-label :open-profile
+       :style               style/left-section}
+      [quo/user-avatar
+       (merge {:status-indicator? true
+               :size              :small
+               :online?           online?}
+              avatar)]]]))
 
 (defn connectivity-sheet
   []
@@ -95,7 +100,9 @@
       (assoc button-common-props :accessibility-label :open-scanner-button)
       :i/scan]
      [quo/button
-      (assoc button-common-props :accessibility-label :show-qr-button)
+      (merge button-common-props
+             {:accessibility-label :show-qr-button
+              :on-press            #(dispatch-and-chill [:open-modal :share-shell] 1000)})
       :i/qr-code]
      [rn/view
       [unread-indicator]

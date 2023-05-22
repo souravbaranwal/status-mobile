@@ -96,7 +96,7 @@
            {:stack {:id       :intro
                     :children [{:component {:name    :intro
                                             :id      :intro
-                                            :options (options/default-root)}}]}}}
+                                            :options (options/default-root nil colors/neutral-100)}}]}}}
           :shell-stack
           {:root
            {:stack {:id       :shell-stack
@@ -119,4 +119,8 @@
           :welcome
           {:root {:stack {:children [{:component {:name    :welcome
                                                   :id      :welcome
+                                                  :options (options/default-root)}}]}}}
+          :syncing-results
+          {:root {:stack {:children [{:component {:name    :syncing-results
+                                                  :id      :syncing-results
                                                   :options (options/default-root)}}]}}}}))

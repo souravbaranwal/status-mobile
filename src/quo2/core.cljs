@@ -15,7 +15,7 @@
     quo2.components.community.community-card-view
     quo2.components.community.community-list-view
     quo2.components.community.community-view
-    quo2.components.community.discover-card
+    quo2.components.community.banner.view
     quo2.components.community.icon
     quo2.components.community.token-gating
     quo2.components.counter.counter
@@ -38,6 +38,7 @@
     quo2.components.inputs.recovery-phrase.view
     quo2.components.inputs.search-input.view
     quo2.components.inputs.title-input.view
+    quo2.components.keycard.view
     quo2.components.links.url-preview-list.view
     quo2.components.links.url-preview.view
     quo2.components.links.link-preview.view
@@ -82,7 +83,8 @@
     quo2.components.tags.tag
     quo2.components.tags.tags
     quo2.components.tags.token-tag
-    quo2.components.text-combinations.title.view))
+    quo2.components.text-combinations.title.view
+    quo2.components.settings.settings-list.view))
 
 (def text quo2.components.markdown.text/text)
 (def icon quo2.components.icon/icon)
@@ -126,6 +128,7 @@
 
 ;;;; CARDS
 (def small-option-card quo2.components.onboarding.small-option-card.view/small-option-card)
+(def keycard quo2.components.keycard.view/keycard)
 
 ;;;; COLORS
 (def color-picker quo2.components.colors.color-picker.view/view)
@@ -141,9 +144,9 @@
 (def community-tags quo2.components.community.community-view/community-tags)
 (def community-title quo2.components.community.community-view/community-title)
 (def permission-tag-container quo2.components.community.community-view/permission-tag-container)
-(def discover-card quo2.components.community.discover-card/discover-card)
-(def token-gating quo2.components.community.token-gating/token-gating)
+(def discover-card quo2.components.community.banner.view/view)
 (def community-icon quo2.components.community.icon/community-icon)
+(def token-requirement-list quo2.components.community.token-gating/token-requirement-list)
 
 ;;;; COUNTER
 (def counter quo2.components.counter.counter/counter)
@@ -196,6 +199,7 @@
 ;;;; SETTINGS
 (def privacy-option quo2.components.settings.privacy-option/card)
 (def account quo2.components.settings.accounts.view/account)
+(def settings-list quo2.components.settings.settings-list.view/settings-list)
 
 ;;;; SHARE
 (def qr-code quo2.components.share.qr-code.view/qr-code)

@@ -64,7 +64,7 @@
     [:f> f-send-button state animations window-height images? btn-opacity z-index]))
 
 (defn audio-button
-  [{:keys [record-reset-fn]}
+  [{:keys [record-reset-fn input-ref]}
    {:keys [record-permission? recording? gesture-enabled? focused?]}
    {:keys [container-opacity]}]
   (let [audio (rf/sub [:chats/sending-audio])]
@@ -86,17 +86,22 @@
                                              (reset! recording? false)
                                              (reset! gesture-enabled? true)
                                              (rf/dispatch [:chat/send-audio file-path duration])
-                                             (when-not @focused?
+                                             (if-not @focused?
                                                (reanimated/animate container-opacity
-                                                                   constants/empty-opacity))
+                                                                   constants/empty-opacity)
+                                               (js/setTimeout #(when @input-ref (.focus ^js @input-ref))
+                                                              300))
                                              (rf/dispatch [:chat.ui/set-input-audio nil]))
        :on-cancel                          (fn []
                                              (when @recording?
                                                (reset! recording? false)
                                                (reset! gesture-enabled? true)
-                                               (when-not @focused?
+                                               (if-not @focused?
                                                  (reanimated/animate container-opacity
-                                                                     constants/empty-opacity))
+                                                                     constants/empty-opacity)
+                                                 (js/setTimeout #(when @input-ref
+                                                                   (.focus ^js @input-ref))
+                                                                300))
                                                (rf/dispatch [:chat.ui/set-input-audio nil])))
        :on-check-audio-permissions         (fn []
                                              (permissions/permission-granted?
@@ -149,11 +154,12 @@
 (defn image-button
   [props animations insets]
   [quo/button
-   {:on-press #(open-photo-selector props animations insets)
-    :icon     true
-    :type     :outline
-    :size     32
-    :style    {:margin-right 12}}
+   {:on-press            #(open-photo-selector props animations insets)
+    :accessibility-label :open-images-button
+    :icon                true
+    :type                :outline
+    :size                32
+    :style               {:margin-right 12}}
    :i/image])
 
 (defn reaction-button

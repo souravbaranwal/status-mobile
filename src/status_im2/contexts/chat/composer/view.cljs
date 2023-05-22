@@ -8,6 +8,7 @@
     [reagent.core :as reagent]
     [utils.i18n :as i18n]
     [status-im2.contexts.chat.composer.style :as style]
+    [status-im2.contexts.chat.composer.link-preview.view :as link-preview]
     [status-im2.contexts.chat.composer.images.view :as images]
     [status-im2.contexts.chat.composer.reply.view :as reply]
     [status-im2.contexts.chat.composer.edit.view :as edit]
@@ -20,7 +21,8 @@
     [status-im2.contexts.chat.composer.gesture :as drag-gesture]
     [status-im2.contexts.chat.composer.handlers :as handler]
     [status-im2.contexts.chat.composer.gradients.view :as gradients]
-    [status-im2.contexts.chat.composer.selection :as selection]))
+    [status-im2.contexts.chat.composer.selection :as selection]
+    [quo2.theme :as theme]))
 
 (defn sheet-component
   [{:keys [insets window-height blur-height opacity background-y]} props state]
@@ -62,7 +64,10 @@
     (effects/edit-mentions props state subs)
     [:<>
      [sub-view/shell-button state animations subs]
-     [mentions/view props state animations max-height cursor-pos (:images subs) (:reply subs)
+     [mentions/view props state animations max-height cursor-pos
+      (:images subs)
+      (:link-previews? subs)
+      (:reply subs)
       (:edit subs)]
      [gesture/gesture-detector
       {:gesture (drag-gesture/drag-gesture props state animations dimensions keyboard-shown)}
@@ -95,6 +100,7 @@
            :on-change-text           #(handler/change-text % props state)
            :on-selection-change      #(handler/selection-change % props state)
            :on-selection             #(selection/on-selection % props state)
+           :keyboard-appearance      (theme/theme-value :light :dark)
            :max-height               max-height
            :max-font-size-multiplier 1
            :multiline                true
@@ -104,6 +110,7 @@
            :max-length               constants/max-text-size
            :accessibility-label      :chat-message-input}]]
         [gradients/view props state animations show-bottom-gradient?]]
+       [link-preview/message-draft-link-previews]
        [images/images-list]
        [actions/view props state animations window-height insets subs]]]]))
 

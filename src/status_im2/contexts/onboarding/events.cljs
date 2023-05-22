@@ -1,17 +1,16 @@
 (ns status-im2.contexts.onboarding.events
   (:require
-    [utils.re-frame :as rf]
-    [taoensso.timbre :as log]
+    [clojure.string :as string]
+    [native-module.core :as native-module]
     [re-frame.core :as re-frame]
+    [status-im.ethereum.core :as ethereum]
     [status-im.utils.types :as types]
     [status-im2.config :as config]
-    [clojure.string :as string]
-    [utils.i18n :as i18n]
-    [utils.security.core :as security]
-    [native-module.core :as native-module]
-    [status-im.ethereum.core :as ethereum]
     [status-im2.constants :as constants]
-    [status-im2.contexts.onboarding.profiles.view :as profiles.view]))
+    [taoensso.timbre :as log]
+    [utils.i18n :as i18n]
+    [utils.re-frame :as rf]
+    [utils.security.core :as security]))
 
 (re-frame/reg-fx
  :multiaccount/create-account-and-login
@@ -80,29 +79,38 @@
         effect          (if seed-phrase
                           :multiaccount/restore-account-and-login
                           :multiaccount/create-account-and-login)
-        request         {:displayName              display-name
-                         :password                 (ethereum/sha3 (security/safe-unmask-data password))
-                         :mnemonic                 (when seed-phrase
-                                                     (security/safe-unmask-data seed-phrase))
-                         :imagePath                (strip-file-prefix image-path)
-                         :customizationColor       color
-                         :backupDisabledDataDir    (native-module/backup-disabled-data-dir)
-                         :rootKeystoreDir          (native-module/keystore-dir)
+        request         {:displayName                 display-name
+                         :password                    (ethereum/sha3 (security/safe-unmask-data
+                                                                      password))
+                         :mnemonic                    (when seed-phrase
+                                                        (security/safe-unmask-data seed-phrase))
+                         :imagePath                   (strip-file-prefix image-path)
+                         :customizationColor          color
+                         :backupDisabledDataDir       (native-module/backup-disabled-data-dir)
+                         :rootKeystoreDir             (native-module/keystore-dir)
                          ;; Temporary fix until https://github.com/status-im/status-go/issues/3024 is
                          ;; resolved
-                         :wakuV2Nameserver         "1.1.1.1"
-                         :logLevel                 (when log-enabled? config/log-level)
-                         :logEnabled               log-enabled?
-                         :logFilePath              (native-module/log-file-directory)
-                         :openseaAPIKey            config/opensea-api-key
-                         :verifyTransactionURL     config/verify-transaction-url
-                         :verifyENSURL             config/verify-ens-url
-                         :verifyENSContractAddress config/verify-ens-contract-address
-                         :verifyTransactionChainID config/verify-transaction-chain-id
-                         :upstreamConfig           config/default-network-rpc-url
-                         :networkId                config/default-network-id
-                         :currentNetwork           config/default-network
-                         :previewPrivacy           config/blank-preview?}]
+                         :wakuV2Nameserver            "1.1.1.1"
+                         :logLevel                    (when log-enabled? config/log-level)
+                         :logEnabled                  log-enabled?
+                         :logFilePath                 (native-module/log-file-directory)
+                         :openseaAPIKey               config/opensea-api-key
+                         :verifyTransactionURL        config/verify-transaction-url
+                         :verifyENSURL                config/verify-ens-url
+                         :verifyENSContractAddress    config/verify-ens-contract-address
+                         :verifyTransactionChainID    config/verify-transaction-chain-id
+                         :upstreamConfig              config/default-network-rpc-url
+                         :networkId                   config/default-network-id
+                         :poktToken                   config/POKT_TOKEN
+                         :infuraToken                 config/INFURA_TOKEN
+
+                         :alchemyOptimismMainnetToken config/ALCHEMY_OPTIMISM_MAINNET_TOKEN
+                         :alchemyOptimismGoerliToken  config/ALCHEMY_OPTIMISM_GOERLI_TOKEN
+                         :alchemyArbitrumMainnetToken config/ALCHEMY_ARBITRUM_MAINNET_TOKEN
+                         :alchemyArbitrumGoerliToken  config/ALCHEMY_ARBITRUM_GOERLI_TOKEN
+
+                         :currentNetwork              config/default-network
+                         :previewPrivacy              config/blank-preview?}]
     {effect    request
      :dispatch [:navigate-to :generating-keys]
      :db       (-> db
@@ -140,12 +148,10 @@
      {:title               (i18n/label :t/multiaccount-exists-title)
       :content             (i18n/label :t/multiaccount-exists-content)
       :confirm-button-text (i18n/label :t/unlock)
-      :on-accept           #(do
-                              (re-frame/dispatch [:pop-to-root :profiles])
-                              ;; FIXME(rasom): obviously not cool
-                              (reset! profiles.view/show-profiles? false)
-                              (re-frame/dispatch
-                               [:multiaccounts.login.ui/multiaccount-selected key-uid]))
+      :on-accept           (fn []
+                             (re-frame/dispatch [:pop-to-root :profiles])
+                             (re-frame/dispatch
+                              [:multiaccounts.login.ui/multiaccount-selected key-uid]))
       :on-cancel           #(re-frame/dispatch [:pop-to-root :multiaccounts])}}
     {:db       (assoc-in db [:onboarding-2/profile :seed-phrase] seed-phrase)
      :dispatch [:navigate-to :create-profile]}))
