@@ -1,4 +1,4 @@
-(ns status-im2.contexts.shell.cards.view
+(ns status-im2.contexts.shell.components.switcher-cards.view
   (:require [clojure.string :as string]
             [utils.i18n :as i18n]
             [quo2.core :as quo]
@@ -6,8 +6,8 @@
             [react-native.core :as rn]
             [react-native.fast-image :as fast-image]
             [status-im2.constants :as constants]
-            [status-im2.contexts.shell.cards.style :as style]
             [status-im2.contexts.shell.constants :as shell.constants]
+            [status-im2.contexts.shell.components.switcher-cards.style :as style]
             [status-im2.contexts.chat.messages.resolver.message-resolver :as resolver]))
 
 (defn content-container
@@ -180,13 +180,26 @@
 
       "")))
 
+(defn calculate-card-height-and-call-on-press
+  [card-ref on-press]
+  ;; Add null check, this might throw error
+  ;; First find, why?
+  (.measure
+   @card-ref
+   (fn [_ _ _ _ page-x page-y]
+     (on-press))))
+
 ;; Screens Card
 (defn screens-card
   [{:keys [avatar-params title type customization-color
            on-press on-close content banner]}]
   (let [color-50 (colors/custom-color customization-color 50)
-        color-60 (colors/custom-color customization-color 60)]
-    [rn/touchable-without-feedback {:on-press on-press}
+        color-60 (colors/custom-color customization-color 60)
+        card-ref (atom nil)]
+    [rn/touchable-opacity
+     {:on-press       #(calculate-card-height-and-call-on-press card-ref on-press)
+      :ref            #(reset! card-ref ^js %)
+      :active-opacity 1}
      [rn/view {:style (style/base-container color-50)}
       (when banner
         [rn/image

@@ -1,20 +1,20 @@
-(ns status-im2.contexts.shell.home-stack
+(ns status-im2.contexts.shell.components.home-stack.view
   (:require [react-native.reanimated :as reanimated]
             [status-im.ui.screens.wallet.accounts.views :as wallet.accounts]
             [status-im2.contexts.chat.home.view :as chat]
+            [status-im2.contexts.shell.state :as state]
             [status-im2.contexts.communities.home.view :as communities]
-            [status-im2.contexts.shell.animation :as animation]
             [status-im2.contexts.shell.constants :as shell.constants]
-            [status-im2.contexts.shell.style :as styles]
+            [status-im2.contexts.shell.components.home-stack.style :as styles]
             [status-im.ui.screens.browser.stack :as browser.stack]))
 
 (defn load-stack?
   [stack-id]
   (case stack-id
-    :communities-stack @animation/load-communities-stack?
-    :chats-stack       @animation/load-chats-stack?
-    :browser-stack     @animation/load-browser-stack?
-    :wallet-stack      @animation/load-wallet-stack?))
+    :communities-stack @state/load-communities-stack?
+    :chats-stack       @state/load-chats-stack?
+    :browser-stack     @state/load-browser-stack?
+    :wallet-stack      @state/load-wallet-stack?))
 
 (defn- f-stack-view
   [stack-id shared-values]
@@ -43,8 +43,8 @@
 
 (defn f-home-stack
   []
-  (let [shared-values             @animation/shared-values-atom
-        home-stack-original-style (styles/home-stack @animation/screen-height)
+  (let [shared-values             @state/shared-values-atom
+        home-stack-original-style (styles/home-stack)
         home-stack-animated-style (reanimated/apply-animations-to-style
                                    {:top            (:home-stack-top shared-values)
                                     :left           (:home-stack-left shared-values)

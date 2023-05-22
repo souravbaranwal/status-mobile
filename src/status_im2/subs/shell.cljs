@@ -4,6 +4,7 @@
             [status-im2.constants :as constants]
             [status-im2.common.resources :as resources]))
 
+;; Helper Functions
 (defn community-avatar
   [community]
   (let [images (:images community)]
@@ -103,6 +104,7 @@
                  #(re-frame/dispatch [:chat/navigate-to-chat channel-id])
                  100))}))
 
+;;;; Subscriptions
 (def memo-shell-cards (atom nil))
 
 (re-frame/reg-sub
@@ -122,6 +124,7 @@
  (fn [stacks]
    (> (count stacks) 6)))
 
+;; Switcher Cards
 (re-frame/reg-sub
  :shell/one-to-one-chat-card
  (fn [[_ id] _]
@@ -157,6 +160,7 @@
          community    (get communities (:community-id channel))]
      (community-channel-card community community-id channel channel-id))))
 
+;; Bottom tabs
 (re-frame/reg-sub
  :shell/bottom-tabs-notifications-data
  :<- [:chats/chats]
@@ -191,3 +195,10 @@
       {:new-notifications?     (pos? (:unviewed-messages-count chats-stack))
        :notification-indicator (if (pos? (:unviewed-mentions-count chats-stack)) :counter :unread-dot)
        :counter-label          (:unviewed-mentions-count chats-stack)}})))
+
+;; Floating screens
+(re-frame/reg-sub
+ :shell/floating-screen
+ :<- [:shell/floating-screens]
+ (fn [screens [_ screen-id]]
+   (get screens screen-id)))

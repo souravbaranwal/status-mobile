@@ -1,5 +1,7 @@
 (ns status-im2.navigation.events
-  (:require [utils.re-frame :as rf]))
+  (:require [utils.re-frame :as rf]
+            [status-im2.navigation.state :as state]
+            [status-im2.contexts.shell.events :as shell.events]))
 
 (defn- all-screens-params
   [db view screen-params]
@@ -12,17 +14,13 @@
 
 (rf/defn navigate-to
   {:events [:navigate-to]}
-  [{:keys [db]} go-to-view-id screen-params]
-  (merge
-   {:db          (-> (assoc db :view-id go-to-view-id)
-                     (all-screens-params go-to-view-id screen-params))
-    :navigate-to go-to-view-id
-    :dispatch    [:hide-bottom-sheet]}
-   (when (#{:chat :community-overview} go-to-view-id)
-     {:dispatch-later
-      ;; 300 ms delay because, navigation is priority over shell card update
-      [{:dispatch [:shell/add-switcher-card go-to-view-id screen-params]
-        :ms       300}]})))
+  [{:keys [db] :as cofx} go-to-view-id screen-params]
+  (rf/merge
+   cofx
+   {:db       (-> (assoc db :view-id go-to-view-id)
+                  (all-screens-params go-to-view-id screen-params))
+    :dispatch [:hide-bottom-sheet]}
+   (shell.events/shell-navigate-to go-to-view-id screen-params nil nil)))
 
 (rf/defn open-modal
   {:events [:open-modal]}
@@ -34,8 +32,8 @@
 
 (rf/defn navigate-back
   {:events [:navigate-back]}
-  [_]
-  {:navigate-back nil})
+  [cofx]
+  (shell.events/shell-navigate-back cofx))
 
 (rf/defn pop-to-root
   {:events [:pop-to-root]}

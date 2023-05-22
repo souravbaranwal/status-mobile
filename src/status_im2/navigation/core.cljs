@@ -4,7 +4,7 @@
             [react-native.gesture :as gesture]
             [react-native.navigation :as navigation]
             [status-im.multiaccounts.login.core :as login-core]
-            [status-im2.contexts.shell.animation :as shell.animation]
+            [status-im2.contexts.shell.utils :as shell.utils]
             [status-im2.navigation.roots :as roots]
             [status-im2.navigation.state :as state]
             [status-im2.navigation.view :as views]
@@ -39,7 +39,7 @@
     (re-frame/dispatch [:screens/on-will-focus view-id])
     (re-frame/dispatch [:set-view-id
                         (if (= view-id :shell-stack)
-                          (or @shell.animation/selected-stack-id :shell)
+                          (shell.utils/calculate-view-id)
                           view-id)])
     (when on-focus
       (re-frame/dispatch on-focus))))

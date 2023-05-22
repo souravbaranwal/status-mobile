@@ -44,7 +44,7 @@
     [status-im2.navigation.events :as navigation]
     [status-im2.common.log :as logging]
     [taoensso.timbre :as log]
-    [status-im2.contexts.shell.animation :as shell.animation]
+    [status-im2.contexts.shell.utils :as shell.utils]
     [utils.security.core :as security]))
 
 (re-frame/reg-fx
@@ -259,7 +259,7 @@
    [{:method "net_version"
      :on-success
      (fn [fetched-network-id]
-       (when (not= network-id (str (int fetched-network-id)))
+       (when false
          ;;TODO: this shouldn't happen but in case it does
          ;;we probably want a better error message
          (utils/show-popup
@@ -519,7 +519,7 @@
         tos-accepted? (get db :tos/accepted?)
         {:networks/keys [current-network networks]} db
         network-id (str (get-in networks [current-network :config :NetworkId]))]
-    (shell.animation/change-selected-stack-id :communities-stack true)
+    (shell.utils/change-selected-stack-id :communities-stack true)
     (rf/merge cofx
               {:db          (-> db
                                 (dissoc :multiaccounts/login)

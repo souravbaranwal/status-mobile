@@ -344,12 +344,12 @@
            (reset! first-channel-height height))}]])))
 
 (defn overview
-  []
-  (let [id        (rf/sub [:get-screen-params :community-overview])
+  [id]
+  (let [id        (or id (rf/sub [:get-screen-params :community-overview]))
         community (rf/sub [:communities/community id])
         pending?  (rf/sub [:communities/my-pending-request-to-join id])]
     [rn/view
-     {:style style/community-overview-container}
+     {:style (style/community-overview-container)}
      [community-card-page-view community pending?]
      [floating-shell-button/floating-shell-button
       {:jump-to {:on-press #(rf/dispatch [:shell/navigate-to-jump-to])

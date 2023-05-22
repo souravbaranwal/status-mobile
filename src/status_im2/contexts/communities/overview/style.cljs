@@ -1,5 +1,6 @@
 (ns status-im2.contexts.communities.overview.style
-  (:require [quo2.foundations.colors :as colors]))
+  (:require [quo2.foundations.colors :as colors]
+            [status-im2.contexts.shell.utils :as shell.utils]))
 
 (def preview-user
   {:flex-direction :row
@@ -26,9 +27,13 @@
    :margin-left  :auto
    :margin-right :auto})
 
-(def community-overview-container
-  {:position :absolute
-   :top      0
-   :left     0
-   :right    0
-   :bottom   0})
+(defn community-overview-container
+  []
+  (let [{:keys [width height]} (shell.utils/dimensions)]
+    {:position :absolute
+     :top      0
+     :left     0
+     :right    0
+     :bottom   0
+     :width    width
+     :height   height}))

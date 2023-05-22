@@ -1,0 +1,34 @@
+(ns status-im2.contexts.shell.components.bottom-tabs.style
+  (:require [quo2.foundations.colors :as colors]
+            [react-native.platform :as platform]
+            [status-im2.contexts.shell.utils :as utils]))
+
+;; Bottom Tabs
+(defn bottom-tabs-container
+  [pass-through?]
+  {:background-color    (if pass-through? :transparent colors/neutral-100)
+   :flex                1
+   :align-items         :center
+   :height              (utils/bottom-tabs-container-height)
+   :position            :absolute
+   :bottom              0
+   :right               0
+   :left                0
+   :overflow            :hidden
+   :accessibility-label :bottom-tabs-container})
+
+(defn bottom-tabs
+  []
+  {:flex-direction      :row
+   :position            :absolute
+   :bottom              (if platform/android? 8 34)
+   :flex                1
+   :accessibility-label :bottom-tabs})
+
+(def bottom-tabs-blur-overlay
+  {:position         :absolute
+   :left             0
+   :right            0
+   :bottom           0
+   :height           (utils/bottom-tabs-extended-container-height)
+   :background-color colors/neutral-100-opa-70})
