@@ -236,18 +236,7 @@
                                        (let [layout-height (oops/oget e "nativeEvent.layout.height")]
                                          (when platform/android?
                                            (reanimated/set-shared-value scroll-y layout-height))
-                                         (reset! messages-view-height layout-height)))}]
-
-     [quo/floating-shell-button
-      (merge {:jump-to
-              {:on-press #(do
-                            (rf/dispatch [:chat/close true])
-                            (rf/dispatch [:shell/navigate-to-jump-to]))
-               :label    (i18n/label :t/jump-to)}}
-             (when @show-floating-scroll-down-button
-               {:scroll-to-bottom {:on-press scroll-to-bottom}}))
-      {:position :absolute
-       :bottom   6}]]))
+                                         (reset! messages-view-height layout-height)))}]]))
 
 (defn use-keyboard-visibility
   []
